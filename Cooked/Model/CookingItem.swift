@@ -8,11 +8,18 @@
 import Foundation
 import SwiftData
 
+/// Wrapper to anything that can be cooked for a prescribed time.
+///
+/// This doesn't hold the actual name, that is on `FoodItem`.
+/// Also, the `FoodVariable` is an arbitrary variable.
+/// Hence, a cooking item may have a food item of "Rice"
+/// and a food variable of "Basmati".
 @Model
 final class CookingItem: TimedItem {
     
     @Relationship(deleteRule: .nullify)
     var foodItem: FoodItem? = FoodItem(name: "")
+    
 
     @Relationship(deleteRule: .nullify)
     var foodVariable: FoodVariable?
@@ -22,17 +29,22 @@ final class CookingItem: TimedItem {
 
     var createdAt: Date = Date()
     
-    // Note: this inverse relationship causes a circular reference error
-    // and is not needed since Swift infers the bi-directional relationship.
-    // The convention is to put the relationship on the "to-many" side
-    // as I did already on CookingTimer.items (vs. the "to-one" side here)
-    // @Relationship(inverse: \CookingTimer.items)
-    weak var cookingTimer: CookingTimer?
+    // NOTE: this is the "other" side of the many-to-many relationship
+    // between CookingTimer and CookingItem.
+    // SwiftData automatically detects the many-to-many relationship
+    // and manages the data locally and on the backend, including
+    // populating this array in the client.
+    // (i.e. we can look up the associated timers from each food item)
+    // SwiftData also infers the "inverse" relationship so we don't
+    // need to mention it again here. I mention the minimum model count
+    // just to be explicit (0 or more). See TBD.
+    @Relationship(minimumModelCount: 0)
+    var cookingTimers: [CookingTimer]? = []
 
-    init(foodItem: FoodItem, foodVariable: FoodVariable? = nil, cookingTimeSeconds: Int) {
-        self.foodItem = foodItem
-        self.foodVariable = foodVariable
-        self.timeInSeconds = max(0, cookingTimeSeconds)
+    init(food: FoodItem, variable: FoodVariable? = nil, minutes: Double) {
+        self.foodItem = food
+        self.foodVariable = variable
+        self.timeInSeconds = max(0, Int(minutes * 60))
     }
 }
 

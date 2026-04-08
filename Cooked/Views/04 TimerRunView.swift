@@ -69,8 +69,8 @@ struct TimerRunView: View {
 
     let chicken = FoodItem(name: "Chicken")
     let rice = FoodItem(name: "Rice")
-    let item1 = CookingItem(foodItem: chicken, cookingTimeSeconds: 45 * 60)
-    let item2 = CookingItem(foodItem: rice, cookingTimeSeconds: 30 * 60)
+    let item1 = CookingItem(food: chicken, minutes: 45)
+    let item2 = CookingItem(food: rice, minutes: 30)
     let ct = CookingTimer(items: [item1, item2])
 
     ctx.insert(chicken)

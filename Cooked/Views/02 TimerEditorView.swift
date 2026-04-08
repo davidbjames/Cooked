@@ -29,9 +29,9 @@ struct TimerEditorView: View {
 
     var body: some View {
         VStack {
-            Form {
-                // Timer name
-                Section("Name") {
+            Form { // apparently a List under the hood
+                // Timer name (optional)
+                Section {
                     TextField("Optional name", text: Binding(
                         // Since the model is not observable, getting/setting
                         // its values is done with manual get/set here.
@@ -42,30 +42,37 @@ struct TimerEditorView: View {
                             timer.customName = $0.isEmpty ? nil : $0
                         }
                     ))
+                } header: {
+                    Text("Name")
                 }
-                // Items
+                // Cooking items
                 Section {
                     if let items = timer.items, !items.isEmpty {
-                        List(selection: $selection) {
-                            ForEach(items) { item in
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(item.displayName)
-                                        Text(item.relativeTimeDisplay)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
+                        ForEach(items) { item in
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(item.displayName)
+                                    Text(item.relativeTimeDisplay)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-                                .tag(item.persistentModelID)
+                                Spacer()
                             }
-                            .onDelete { offsets in
-                                for index in offsets {
-                                    timer.items?.remove(at: index)
+                            .tag(item.persistentModelID)
+                            .swipeActions(edge: .trailing, content: {
+                                Button(role: .destructive) {
+                                    item.delete(in: modelContext)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
-                            }
-                            .onMove(perform: moveItems)
+                            })
                         }
+//                            .onDelete { offsets in
+//                                for index in offsets {
+//                                    timer.items?.remove(at: index)
+//                                }
+//                            }
+//                            .onMove(perform: moveItems)
                     } else {
                         ContentUnavailableView(
                             "No cooking items",
@@ -90,6 +97,7 @@ struct TimerEditorView: View {
                 // Schedule preview
                 if let items = timer.items, !items.isEmpty {
                     Section {
+                        // TODO: absolute time display should sometimes include seconds for short timers
                         if let event = timer.createCompletionSchedule.first {
                             VStack(alignment: .leading) {
                                 HStack {
@@ -122,10 +130,14 @@ struct TimerEditorView: View {
                         }
                     } header: {
                         HStack {
-                            Text("Schedule Preview")
+                            Text("Schedule")
                             Spacer()
+                            // TODO: get rid of refresh button
+                            // TODO: automate the schedule every minute
+                            // - move to separate view for performance
+                            // - use content transition for numbers
                             Button {
-                                refreshId = UUID()
+                                refreshId = UUID() // forces update
                             } label: {
                                 Label("Update", systemImage: "clock")
                                     .labelStyle(.titleAndIcon)
@@ -150,6 +162,7 @@ struct TimerEditorView: View {
                 .buttonStyle(.borderedProminent)
                 .padding(.horizontal, 16)
                 .background(.clear)
+                .disabled(!timer.hasCookingItems)
             }
         }
         .navigationDestination(isPresented: $navigateToRun) {
@@ -166,16 +179,20 @@ struct TimerEditorView: View {
 //                    dismiss()
 //                }
 //            }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    modelContext.insert(timer)
-                    try? modelContext.save()
-                    dismiss()
+            if timer.hasCookingItems {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        modelContext.insert(timer)
+                        try? modelContext.save()
+                        dismiss()
+                    }
                 }
             }
 #if os(iOS)
-            ToolbarItem {
-                EditButton()
+            if timer.hasCookingItems {
+                ToolbarItem {
+                    EditButton()
+                }
             }
 #endif
         }
@@ -207,8 +224,8 @@ struct TimerEditorView: View {
     let weight = FoodVariable(name: "1.2 kg")
     let doneness = FoodVariable(name: "Medium-rare")
 
-    let item1 = CookingItem(foodItem: chicken, foodVariable: weight, cookingTimeSeconds: 50 * 60)
-    let item2 = CookingItem(foodItem: steak, foodVariable: doneness, cookingTimeSeconds: 12 * 60)
+    let item1 = CookingItem(food: chicken, variable: weight, minutes: 50)
+    let item2 = CookingItem(food: steak, variable: doneness, minutes: 12)
 
     let timer = CookingTimer(items: [item1, item2], customName: "Sunday Dinner")
 

@@ -8,12 +8,15 @@
 import Foundation
 import SwiftData
 
+/// Cooking timer in the broader sense of functionality.
+/// Ultimately, these are more "meal planners" that include
+/// as a core feature the timing of different meal parts.
 @Model
 final class CookingTimer {
     
     /// Relationship to items (to-many, unordered by default)
     /// (this does not cascade delete to preserve original cooking items and their references)
-    @Relationship(deleteRule: .nullify, inverse: \CookingItem.cookingTimer)
+    @Relationship(deleteRule: .nullify, minimumModelCount: 1, inverse: \CookingItem.cookingTimers)
     var items: [CookingItem]? = []
 
     /// Optional user-provided name
@@ -25,9 +28,6 @@ final class CookingTimer {
         self.items = items
         self.customName = customName?.trimmingCharacters(in: .whitespacesAndNewlines)
         self.createdAt = Date()
-        for item in items {
-            item.cookingTimer = self
-        }
     }
     
     /// Computed name when customName is nil or empty:
@@ -64,6 +64,10 @@ final class CookingTimer {
         }
         return items.compactMap { $0.foodItem?.name }.joined(separator: ", ")
     }
+    
+    var hasCookingItems: Bool {
+        items != nil && items!.count > 0
+    }
 }
 
 extension CookingTimer: TimedItem {
@@ -73,3 +77,4 @@ extension CookingTimer: TimedItem {
         items?.max(by: { $0.timeInSeconds < $1.timeInSeconds })?.timeInSeconds ?? 0
     }
 }
+

@@ -15,6 +15,10 @@ import SwiftData
 // - tech note: https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window
 // Get the app to a point of "working" correctly, including the timer display before integrating AI
 
+// TODO: cooking *item* view which also shows *timers* they belong to
+//       (i.e. since they have a many-to-many relationship)
+// TBD:  should items always have at least 1 timer associated? 1..*
+//       or can we have items with no timers? 0..*
 
 @main
 struct CookedApp: App {
@@ -41,7 +45,11 @@ struct CookedApp: App {
             preconditionFailure()
         }
         #if DEBUG
-        CookedApp.seedMockData(modelContainer)
+        do {
+            try DataHelpers.seedMockData(context: modelContainer.mainContext)
+        } catch {
+            print("Failed to seed mock data: \(error)")
+        }
         #endif
         return modelContainer
     }()
@@ -51,57 +59,6 @@ struct CookedApp: App {
             TimerListView()
         }
         .modelContainer(sharedModelContainer)
-    }
-
-    private static func seedMockData(_ modelContainer: ModelContainer) {
-
-        let context = modelContainer.mainContext
-
-        do {
-            let existing = try context.fetch(FetchDescriptor<CookingTimer>())
-            if !existing.isEmpty {
-                // already seeded
-                return
-            }
-        } catch {
-            print("Mock seeding: fetch failed: \(error)")
-        }
-
-        // Seed shared data
-        let chicken = FoodItem(name: "Chicken")
-        let rice = FoodItem(name: "Rice")
-        let pasta = FoodItem(name: "Pasta")
-        let large = FoodVariable(name: "Large")
-        let basmati = FoodVariable(name: "Basmati")
-
-        // Create cooking items (some overlap in FoodItems across timers)
-        let item1 = CookingItem(foodItem: chicken, foodVariable: large, cookingTimeSeconds: 45 * 60)
-        let item2 = CookingItem(foodItem: rice, foodVariable: basmati, cookingTimeSeconds: 30 * 60)
-        let item3 = CookingItem(foodItem: chicken, cookingTimeSeconds: 25 * 60) // same food as item1, different variable/duration
-        let item4 = CookingItem(foodItem: pasta, cookingTimeSeconds: 12 * 60)
-
-        // Two timers with variation and overlap
-        let timer1 = CookingTimer(items: [item1, item2], customName: "Dinner")
-        let timer2 = CookingTimer(items: [item3, item4], customName: "Quick Meal")
-
-        // Insert into context
-        context.insert(chicken)
-        context.insert(rice)
-        context.insert(pasta)
-        context.insert(large)
-        context.insert(basmati)
-        context.insert(item1)
-        context.insert(item2)
-        context.insert(item3)
-        context.insert(item4)
-        context.insert(timer1)
-        context.insert(timer2)
-
-        do {
-            try context.save()
-        } catch {
-            print("Mock seeding: save failed: \(error)")
-        }
     }
 }
 

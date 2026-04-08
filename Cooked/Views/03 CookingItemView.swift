@@ -196,7 +196,7 @@ struct CookingItemView: View {
         let totalSeconds = parsedSeconds()
         guard totalSeconds > 0 else { return }
 
-        let item = CookingItem(foodItem: food, foodVariable: selectedVariable, cookingTimeSeconds: totalSeconds)
+        let item = CookingItem(food: food, variable: selectedVariable, minutes: Double(totalSeconds) / 60)
         modelContext.insert(item)
         onSave(item)
         dismiss()

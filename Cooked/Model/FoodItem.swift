@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 
+/// Type of food using a simple string name.
 @Model
 final class FoodItem {
     

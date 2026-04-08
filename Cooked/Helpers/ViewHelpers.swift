@@ -9,10 +9,7 @@ import SwiftUI
 
 extension View {
     @ViewBuilder
-    func `if`<Transformed: View>(
-        _ condition: Bool,
-        transform: (Self) -> Transformed
-    ) -> some View {
+    func `if`<Transformed: View>(_ condition: Bool, transform: (Self) -> Transformed) -> some View {
         if condition {
             transform(self)
         } else {
