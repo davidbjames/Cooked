@@ -9,27 +9,27 @@ import SwiftUI
 import SwiftData
 
 struct TimerRunView: View {
-    var timer: CookingTimer
+    var mealPlan: MealPlan
 
     var body: some View {
         List {
             Section {
                 HStack {
-                    Text(timer.name)
+                    Text(mealPlan.name)
                         .font(.title2.bold())
                     Spacer()
                 }
                 HStack {
                     Text("Total")
                     Spacer()
-                    Text(timeString(seconds: timer.timeInSeconds))
+                    Text(timeString(seconds: mealPlan.timeInSeconds))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
             }
 
             Section(header: Text("Rings")) {
-                ForEach(timer.createCompletionSchedule, id: \.self) { event in
+                ForEach(mealPlan.createCompletionSchedule, id: \.self) { event in
                     HStack {
                         if event.isFinal {
                             Text("Finish")
@@ -62,7 +62,7 @@ struct TimerRunView: View {
 
 #Preview {
     let container = try! ModelContainer(
-        for: FoodItem.self, FoodVariable.self, CookingItem.self, CookingTimer.self,
+        for: FoodItem.self, FoodVariable.self, CookingItem.self, MealPlan.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     let ctx = container.mainContext
@@ -71,16 +71,16 @@ struct TimerRunView: View {
     let rice = FoodItem(name: "Rice")
     let item1 = CookingItem(food: chicken, minutes: 45)
     let item2 = CookingItem(food: rice, minutes: 30)
-    let ct = CookingTimer(items: [item1, item2])
+    let mealPlan = MealPlan(items: [item1, item2])
 
     ctx.insert(chicken)
     ctx.insert(rice)
     ctx.insert(item1)
     ctx.insert(item2)
-    ctx.insert(ct)
+    ctx.insert(mealPlan)
 
     return NavigationStack {
-        TimerRunView(timer: ct)
+        TimerRunView(mealPlan: mealPlan)
     }
     .modelContainer(container)
 }

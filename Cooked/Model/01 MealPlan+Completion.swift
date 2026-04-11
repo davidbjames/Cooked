@@ -1,11 +1,11 @@
 //
-//  CookingTimer+CompletionEvent.swift
+//  MealPlan+CompletionEvent.swift
 //  Cooked
 //
 //  Created by David James on 18/03/2026.
 //
 
-extension CookingTimer {
+extension MealPlan {
     
     struct CompletionEvent: Hashable, TimedItem {
         

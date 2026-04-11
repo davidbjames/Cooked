@@ -20,7 +20,10 @@ extension ModelManagable {
     }
 }
 
-extension CookingTimer: ModelManagable {}
+extension MealPlan: ModelManagable {}
 extension CookingItem: ModelManagable {}
 extension FoodItem: ModelManagable {}
+extension FoodGroup: ModelManagable {}
+extension Ingredient: ModelManagable {}
+extension Variety: ModelManagable {}
 extension FoodVariable: ModelManagable {}

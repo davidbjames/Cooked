@@ -11,12 +11,12 @@ enum DataHelpers {
     
     static func wipeAllData(context: ModelContext, deferSave: Bool = false) throws {
         
-        // Delete CookingTimer first to break relationships to items
-        let timerDescriptor = FetchDescriptor<CookingTimer>()
-        let timers = try context.fetch(timerDescriptor)
-        timers.forEach { context.delete($0) }
+        // Delete MealPlan first to break relationships to items
+        let mealPlanDescriptor = FetchDescriptor<MealPlan>()
+        let mealPlans = try context.fetch(mealPlanDescriptor)
+        mealPlans.forEach { context.delete($0) }
         
-        // Then delete CookingItem (some might be left if they were not attached to a timer)
+        // Then delete CookingItem (some might be left if they were not attached to a meal plan)
         let itemDescriptor = FetchDescriptor<CookingItem>()
         let items = try context.fetch(itemDescriptor)
         items.forEach { context.delete($0) }
@@ -37,7 +37,7 @@ enum DataHelpers {
     
     static func seedMockData(context: ModelContext, deferSave: Bool = false) throws {
         
-        let existing = try context.fetch(FetchDescriptor<CookingTimer>())
+        let existing = try context.fetch(FetchDescriptor<MealPlan>())
         
         guard existing.isEmpty else {
             // already seeded
@@ -52,19 +52,19 @@ enum DataHelpers {
         let large = FoodVariable(name: "Large")
         let basmati = FoodVariable(name: "Basmati")
         
-        // Create cooking items (some overlap in FoodItems across timers)
+        // Create cooking items (some overlap in FoodItems across meal plans)
         let item1 = CookingItem(food: chicken, variable: large, minutes: 45)
         let item2 = CookingItem(food: rice, variable: basmati, minutes: 30)
         let item3 = CookingItem(food: chicken, minutes: 25) // same food as item1, different variable/duration
         let item4 = CookingItem(food: pasta, minutes: 12)
         
-        // Two timers with variation and overlap
-        let timer1 = CookingTimer(items: [item1, item2], customName: "Dinner")
-        // item1.cookingTimers = [timer1], item2.cookingTimers = [timer1]
-        let timer2 = CookingTimer(items: [item3, item4], customName: "Quick Meal")
-        // item3.cookingTimers = [timer2], item4.cookingTimers = [timer2]
-        let timer3 = CookingTimer(items: [item2, item4])
-        // item2.cookingTimers = [timer1, timer3], item4.cookingTimers = [timer2, timer3]
+        // Two meal plans with variation and overlap
+        let mealPlan1 = MealPlan(items: [item1, item2], customName: "Dinner")
+        // item1.mealPlans = [mealPlan1], item2.mealPlans = [mealPlan1]
+        let mealPlan2 = MealPlan(items: [item3, item4], customName: "Quick Meal")
+        // item3.mealPlans = [mealPlan2], item4.mealPlans = [mealPlan2]
+        let mealPlan3 = MealPlan(items: [item2, item4])
+        // item2.mealPlans = [mealPlan1, mealPlan3], item4.mealPlans = [mealPlan2, mealPlan3]
         
         // Insert into context
         context.insert(chicken)
@@ -76,9 +76,9 @@ enum DataHelpers {
         context.insert(item2)
         context.insert(item3)
         context.insert(item4)
-        context.insert(timer1)
-        context.insert(timer2)
-        context.insert(timer3)
+        context.insert(mealPlan1)
+        context.insert(mealPlan2)
+        context.insert(mealPlan3)
         
         if !deferSave {
             try context.save()

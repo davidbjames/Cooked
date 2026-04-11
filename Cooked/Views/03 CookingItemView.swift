@@ -203,14 +203,3 @@ struct CookingItemView: View {
     }
 }
 
-#Preview {
-    let container = try! ModelContainer(for: FoodItem.self, FoodVariable.self, CookingItem.self, CookingTimer.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-    let context = container.mainContext
-    let sampleFood = FoodItem(name: "Roast Chicken")
-    context.insert(sampleFood)
-    return NavigationStack {
-        CookingItemView { _ in }
-    }
-    .modelContainer(container)
-}
-

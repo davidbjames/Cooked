@@ -1,5 +1,5 @@
 //
-//  TimerListView.swift
+//  MealPlanListView.swift
 //  Cooked
 //
 //  Created by David James on 29/01/2026.
@@ -7,8 +7,9 @@
 
 import SwiftUI
 import SwiftData
+import FoundationModels
 
-struct TimerListView: View {
+struct MealPlanListView: View {
     
     @Environment(\.modelContext) private var modelContext
     
@@ -16,29 +17,29 @@ struct TimerListView: View {
     @Environment(\.editMode) private var editMode
     #endif
     
-    /// Search text for timers or their contained foods
+    /// Search text for meal plans or their contained foods
     @State private var searchText: String = ""
     
-    /// Only show search bar if there are a few timers
+    /// Only show search bar if there are a few meal plans
     @State private var presentSearchBar: Bool = false
 
-    /// Base query of timers. Don't use directly, use `filteredTimers` instead.
-    @Query(sort: \CookingTimer.createdAt, order: .reverse)
-    private var _timers: [CookingTimer]
+    /// Base query of meal plans. Don't use directly, use `filteredMealPlans` instead.
+    @Query(sort: \MealPlan.createdAt, order: .reverse)
+    private var _mealPlans: [MealPlan]
     
-    // TODO: order these timers by the most recently used
+    // TODO: order these meal plans by the most recently used
     
-    var filteredTimers: [CookingTimer] {
+    var filteredMealPlans: [MealPlan] {
         let search = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         // for this to work one must check the characters for white space and new lines
         guard !search.isEmpty else {
-            return _timers
+            return _mealPlans
         }
-        return _timers.filter { timer in
-            if timer.name.lowercased().contains(search) {
+        return _mealPlans.filter { plan in
+            if plan.name.lowercased().contains(search) {
                 true
             } else {
-                timer.items?.contains { item in
+                plan.items?.contains { item in
                     item.foodItem?.name.lowercased().contains(search) == true
                 } == true
             }
@@ -47,14 +48,14 @@ struct TimerListView: View {
     
     var body: some View {
         NavigationSplitView {
-            List(filteredTimers) { timer in
+            List(filteredMealPlans) { mealPlan in
                 NavigationLink {
-                    TimerEditorView(timer: timer)
+                    MealPlanView(mealPlan: mealPlan)
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(timer.name)
+                        Text(mealPlan.name)
                             .font(.headline)
-                        if let summary = timer.summary {
+                        if let summary = mealPlan.summary {
                             Text(summary)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
@@ -63,7 +64,7 @@ struct TimerListView: View {
                 }
                 .contextMenu { // long press
                     Button(role: .destructive) {
-                        timer.delete(in: modelContext)
+                        mealPlan.delete(in: modelContext)
                     } label: {
                         Label("Delete", systemImage: "trash")
                     }
@@ -73,7 +74,7 @@ struct TimerListView: View {
                     // This reveals action buttons.
                     // Full swipe causes the first action to fire.
                     Button(role: .destructive) {
-                        timer.delete(in: modelContext)
+                        mealPlan.delete(in: modelContext)
                     } label: {
                         Label("Delete", systemImage: "trash")
                     }
@@ -87,7 +88,7 @@ struct TimerListView: View {
 //                        print("-----")
 //                        print(timer.name)
 //                        for item in items {
-//                            guard let innerTimers = item.cookingTimers else {
+//                            guard let innerTimers = item.mealPlans else {
 //                                continue
 //                            }
 //                            print("    ", item.displayName)
@@ -105,7 +106,7 @@ struct TimerListView: View {
                 // this only pertains to search bar *focus*, not visibility
                 // isPresented: $presentSearchBar,
                 placement: .automatic,
-                prompt: Text("Search timers or foods")
+                prompt: Text("Search meal plans or foods")
             )
 #else
             // iOS toolbar is on the List *
@@ -120,7 +121,7 @@ struct TimerListView: View {
                             HStack {
                                 Image(systemName: "magnifyingglass")
                                     .foregroundStyle(.secondary)
-                                TextField("Search timers or foods", text: $searchText)
+                                TextField("Search meal plans or foods", text: $searchText)
                                 if !searchText.isEmpty {
                                     Button {
                                         searchText = ""
@@ -135,7 +136,7 @@ struct TimerListView: View {
                             .background(.regularMaterial, in: Capsule())
                             
                             NavigationLink {
-                                TimerEditorView(timer: CookingTimer(), isNew: true)
+                                MealPlanView(mealPlan: MealPlan(), isNew: true)
                             } label: {
                                 Image(systemName: "plus")
                                 // .foregroundStyle(Color.secondaryColor)
@@ -162,11 +163,11 @@ struct TimerListView: View {
         .toolbar { toolbar }
 #endif
         // imperative state changes
-        .onChange(of: _timers.count) { _, newCount in
+        .onChange(of: _mealPlans.count) { _, newCount in
             presentSearchBar = newCount >= 3
         }
         .onAppear {
-            presentSearchBar = _timers.count >= 3
+            presentSearchBar = _mealPlans.count >= 3
         }
     }
     
@@ -174,7 +175,7 @@ struct TimerListView: View {
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             NavigationLink {
-                TimerEditorView(timer: CookingTimer(), isNew: true)
+                MealPlanView(mealPlan: MealPlan(), isNew: true)
             } label: {
                 HStack {
                     Image(systemName: "plus")
@@ -216,12 +217,12 @@ struct TimerListView: View {
                 Label("Wipe Data", systemImage: "trash")
             }
             .tint(.red)
-            .help("Delete all timers")
+            .help("Delete all meal plans")
         }
 #endif
     }
-    private func summary(for timer: CookingTimer) -> String {
-        guard let items = timer.items else {
+    private func summary(for mealPlan: MealPlan) -> String {
+        guard let items = mealPlan.items else {
             return "Missing data"
         }
         let foods = items.compactMap { $0.foodItem?.name }
@@ -236,7 +237,7 @@ struct TimerListView: View {
 
 #Preview {
     let container = try! ModelContainer(
-        for: FoodItem.self, FoodVariable.self, CookingItem.self, CookingTimer.self,
+        for: FoodItem.self, FoodVariable.self, CookingItem.self, MealPlan.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     let context = container.mainContext
@@ -250,8 +251,8 @@ struct TimerListView: View {
     let item2 = CookingItem(food: rice, minutes: 30)
     let item3 = CookingItem(food: pasta, variable: large, minutes: 12)
     
-    let timer1 = CookingTimer(items: [item1, item2])
-    let timer2 = CookingTimer(items: [item3], customName: "Quick Lunch")
+    let mealPlan1 = MealPlan(items: [item1, item2])
+    let mealPlan2 = MealPlan(items: [item3], customName: "Quick Lunch")
     
     context.insert(chicken)
     context.insert(rice)
@@ -260,10 +261,10 @@ struct TimerListView: View {
     context.insert(item1)
     context.insert(item2)
     context.insert(item3)
-    context.insert(timer1)
-    context.insert(timer2)
+    context.insert(mealPlan1)
+    context.insert(mealPlan2)
     
-    return TimerListView()
+    return MealPlanListView()
         .modelContainer(container)
 }
 

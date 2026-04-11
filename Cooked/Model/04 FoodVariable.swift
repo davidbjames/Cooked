@@ -1,5 +1,5 @@
 //
-//  FoodItem.swift
+//  FoodVariable.swift
 //  Cooked
 //
 //  Created by David James on 29/01/2026.
@@ -8,16 +8,15 @@
 import Foundation
 import SwiftData
 
-/// Type of food using a simple string name.
 @Model
-final class FoodItem {
+final class FoodVariable {
     
-    var name: String = ""
+    private(set) var name: String = ""
     
-    var createdAt: Date = Date()
+    private(set) var createdAt: Date = Date()
     
-    @Relationship(inverse: \CookingItem.foodItem)
-    var items: [CookingItem]?
+    @Relationship(inverse: \CookingItem.foodVariable)
+    private(set) var items: [CookingItem]?
 
     init(name: String) {
         self.name = name.trimmingCharacters(in: .whitespacesAndNewlines)

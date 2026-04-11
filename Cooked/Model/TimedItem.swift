@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// Any item, e.g. `CookingItem` or `CookingTimer`
+/// Any item, e.g. `CookingItem` or `MealPlan`
 /// that has a cooking time in seconds.
 protocol TimedItem {
     var timeInSeconds: Int { get }

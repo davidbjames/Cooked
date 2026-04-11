@@ -1,5 +1,5 @@
 //
-//  TimerEditorView.swift
+//  MealPlanView.swift
 //  Cooked
 //
 //  Created by David James on 29/01/2026.
@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct TimerEditorView: View {
+struct MealPlanView: View {
     
     @Environment(\.modelContext)
     private var modelContext: ModelContext
@@ -22,7 +22,7 @@ struct TimerEditorView: View {
     
     @State private var isEditing = false
 
-    @State var timer: CookingTimer
+    @State var mealPlan: MealPlan
     var isNew: Bool = false
     
     @State private var refreshId = UUID() // used to update times
@@ -30,16 +30,16 @@ struct TimerEditorView: View {
     var body: some View {
         VStack {
             Form { // apparently a List under the hood
-                // Timer name (optional)
+                // Meal plan name (optional)
                 Section {
                     TextField("Optional name", text: Binding(
                         // Since the model is not observable, getting/setting
                         // its values is done with manual get/set here.
                         get: {
-                            timer.customName ?? ""
+                            mealPlan.customName ?? ""
                         },
                         set: {
-                            timer.customName = $0.isEmpty ? nil : $0
+                            mealPlan.setCustomName($0.isEmpty ? nil : $0)
                         }
                     ))
                 } header: {
@@ -47,7 +47,7 @@ struct TimerEditorView: View {
                 }
                 // Cooking items
                 Section {
-                    if let items = timer.items, !items.isEmpty {
+                    if let items = mealPlan.items, !items.isEmpty {
                         ForEach(items) { item in
                             HStack {
                                 VStack(alignment: .leading) {
@@ -69,7 +69,7 @@ struct TimerEditorView: View {
                         }
 //                            .onDelete { offsets in
 //                                for index in offsets {
-//                                    timer.items?.remove(at: index)
+//                                    mealPlan.items?.remove(at: index)
 //                                }
 //                            }
 //                            .onMove(perform: moveItems)
@@ -77,7 +77,7 @@ struct TimerEditorView: View {
                         ContentUnavailableView(
                             "No cooking items",
                             systemImage: "fork.knife",
-                            description: Text("Add items to this timer.")
+                            description: Text("Add items to this meal plan.")
                         )
                     }
                 } header: {
@@ -95,10 +95,10 @@ struct TimerEditorView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
                 // Schedule preview
-                if let items = timer.items, !items.isEmpty {
+                if let items = mealPlan.items, !items.isEmpty {
                     Section {
                         // TODO: absolute time display should sometimes include seconds for short timers
-                        if let event = timer.createCompletionSchedule.first {
+                        if let event = mealPlan.createCompletionSchedule.first {
                             VStack(alignment: .leading) {
                                 HStack {
                                     Text("\(event.title)")
@@ -111,7 +111,7 @@ struct TimerEditorView: View {
                                 }
                             }
                         }
-                        ForEach(timer.createCompletionSchedule.dropFirst(), id: \.self) { event in
+                        ForEach(mealPlan.createCompletionSchedule.dropFirst(), id: \.self) { event in
                             VStack(alignment: .leading) {
                                 Text("\(event.title)")
                                     .bold()
@@ -150,7 +150,7 @@ struct TimerEditorView: View {
             // floating button bar that stays above the Form
             .safeAreaInset(edge: .bottom) {
                 Button {
-                    modelContext.insert(timer)
+                    modelContext.insert(mealPlan)
                     try? modelContext.save()
                     navigateToRun = true
                 } label: {
@@ -162,34 +162,34 @@ struct TimerEditorView: View {
                 .buttonStyle(.borderedProminent)
                 .padding(.horizontal, 16)
                 .background(.clear)
-                .disabled(!timer.hasCookingItems)
+                .disabled(!mealPlan.hasCookingItems)
             }
         }
         .navigationDestination(isPresented: $navigateToRun) {
-            TimerRunView(timer: timer)
+            TimerRunView(mealPlan: mealPlan)
         }
-        .navigationTitle(timer.name)
+        .navigationTitle(mealPlan.name)
         .toolbar {
 //            ToolbarItem(placement: .cancellationAction) {
 //                Button("Cancel") {
                     // no need to delete if it was never added to context (persisted)
 //                    if isNew {
-//                        modelContext.delete(timer)
+//                        modelContext.delete(mealPlan)
 //                    }
 //                    dismiss()
 //                }
 //            }
-            if timer.hasCookingItems {
+            if mealPlan.hasCookingItems {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        modelContext.insert(timer)
+                        modelContext.insert(mealPlan)
                         try? modelContext.save()
                         dismiss()
                     }
                 }
             }
 #if os(iOS)
-            if timer.hasCookingItems {
+            if mealPlan.hasCookingItems {
                 ToolbarItem {
                     EditButton()
                 }
@@ -199,22 +199,22 @@ struct TimerEditorView: View {
         .sheet(isPresented: $showingNewItemSheet) {
             NavigationStack {
                 CookingItemView { newItem in
-                    timer.items?.append(newItem)
+                    mealPlan.addCookingItem(newItem)
                 }
             }
             .presentationDetents([.medium, .large])
         }
     }
 
-    private func moveItems(from source: IndexSet, to destination: Int) {
-        timer.items?.move(fromOffsets: source, toOffset: destination)
-    }
+//    private func moveItems(from source: IndexSet, to destination: Int) {
+//        mealPlan.items?.move(fromOffsets: source, toOffset: destination)
+//    }
 
 }
 
 #Preview {
     let container = try! ModelContainer(
-        for: FoodItem.self, FoodVariable.self, CookingItem.self, CookingTimer.self,
+        for: FoodItem.self, FoodVariable.self, CookingItem.self, MealPlan.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     let context = container.mainContext
@@ -227,7 +227,7 @@ struct TimerEditorView: View {
     let item1 = CookingItem(food: chicken, variable: weight, minutes: 50)
     let item2 = CookingItem(food: steak, variable: doneness, minutes: 12)
 
-    let timer = CookingTimer(items: [item1, item2], customName: "Sunday Dinner")
+    let mealPlan = MealPlan(items: [item1, item2], customName: "Sunday Dinner")
 
     context.insert(chicken)
     context.insert(steak)
@@ -235,21 +235,21 @@ struct TimerEditorView: View {
     context.insert(doneness)
     context.insert(item1)
     context.insert(item2)
-    context.insert(timer)
+    context.insert(mealPlan)
 
     return NavigationStack {
-        TimerEditorView(timer: timer)
+        MealPlanView(mealPlan: mealPlan)
     }
     .modelContainer(container)
 }
 
-#Preview("Empty Timer") {
+#Preview("Empty Meal Plan") {
     let container = try! ModelContainer(
-        for: FoodItem.self, FoodVariable.self, CookingItem.self, CookingTimer.self,
+        for: FoodItem.self, FoodVariable.self, CookingItem.self, MealPlan.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     return NavigationStack {
-        TimerEditorView(timer: CookingTimer(), isNew: true)
+        MealPlanView(mealPlan: MealPlan(), isNew: true)
     }
     .modelContainer(container)
 }
