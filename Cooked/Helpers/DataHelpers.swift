@@ -49,10 +49,23 @@ enum DataHelpers {
             return
         }
         
-        // Seed shared data
-        let chicken = FoodItem(name: "Chicken")
-        let rice = FoodItem(name: "Rice")
-        let pasta = FoodItem(name: "Pasta")
+        // Seed food group hierarchy: FoodGroup → Ingredient → Variety
+        let chickenBreastVariety = Variety(name: "Boneless Chicken Breast")
+        let chickenIngredient = Ingredient(name: "Chicken", varieties: [chickenBreastVariety])
+        
+        let basmatiRiceVariety = Variety(name: "Basmati Rice")
+        let riceIngredient = Ingredient(name: "Rice", varieties: [basmatiRiceVariety])
+        
+        let spaghettiVariety = Variety(name: "Spaghetti Pasta")
+        let pastaIngredient = Ingredient(name: "Pasta", varieties: [spaghettiVariety])
+        
+        let stapleGroup = FoodGroup(kind: .staple, ingredients: [riceIngredient, pastaIngredient])
+        let proteinGroup = FoodGroup(kind: .protein, ingredients: [chickenIngredient])
+        
+        // Seed food items using varieties
+        let chicken = FoodItem(variety: chickenBreastVariety)
+        let rice = FoodItem(variety: basmatiRiceVariety)
+        let pasta = FoodItem(variety: spaghettiVariety)
         
         let large = FoodVariable(name: "Large")
         let basmati = FoodVariable(name: "Basmati")
@@ -65,13 +78,14 @@ enum DataHelpers {
         
         // Two meal plans with variation and overlap
         let mealPlan1 = MealPlan(items: [item1, item2], customName: "Dinner")
-        // item1.mealPlans = [mealPlan1], item2.mealPlans = [mealPlan1]
         let mealPlan2 = MealPlan(items: [item3, item4], customName: "Quick Meal")
-        // item3.mealPlans = [mealPlan2], item4.mealPlans = [mealPlan2]
         let mealPlan3 = MealPlan(items: [item2, item4])
-        // item2.mealPlans = [mealPlan1, mealPlan3], item4.mealPlans = [mealPlan2, mealPlan3]
         
-        // Insert into context
+        // Insert food groups (cascades to ingredients and varieties)
+        context.insert(stapleGroup)
+        context.insert(proteinGroup)
+        
+        // Insert food items, variables, cooking items, and meal plans
         context.insert(chicken)
         context.insert(rice)
         context.insert(pasta)
@@ -90,9 +104,11 @@ enum DataHelpers {
         }
     }
     
-    static func resetMockData(context: ModelContext) throws {
+    static func resetData(context: ModelContext, reseed: Bool = false) throws {
         try wipeAllData(context: context, deferSave: true)
-        try seedMockData(context: context, deferSave: true)
+        if reseed {
+            try seedMockData(context: context, deferSave: true)
+        }
         try context.save()
     }
 }
