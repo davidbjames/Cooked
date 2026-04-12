@@ -13,16 +13,16 @@ struct MealPlanListView: View {
     
     @Environment(\.modelContext) private var modelContext
     
-    #if os(iOS)
+#if os(iOS)
     @Environment(\.editMode) private var editMode
-    #endif
+#endif
     
     /// Search text for meal plans or their contained foods
     @State private var searchText: String = ""
     
     /// Only show search bar if there are a few meal plans
     @State private var presentSearchBar: Bool = false
-
+    
     /// Base query of meal plans. Don't use directly, use `filteredMealPlans` instead.
     @Query(sort: \MealPlan.createdAt, order: .reverse)
     private var _mealPlans: [MealPlan]
@@ -80,24 +80,24 @@ struct MealPlanListView: View {
                     }
                 }
                 // .listRowBackground(Rectangle().fill(LinearGradient(...
-//                .onAppear {
-//                    for timer in filteredTimers {
-//                        guard let items = timer.items else {
-//                            continue
-//                        }
-//                        print("-----")
-//                        print(timer.name)
-//                        for item in items {
-//                            guard let innerTimers = item.mealPlans else {
-//                                continue
-//                            }
-//                            print("    ", item.displayName)
-//                            for innerTimer in innerTimers {
-//                                print("        ", innerTimer.name)
-//                            }
-//                        }
-//                    }
-//                }
+                // .onAppear {
+                //     for timer in filteredTimers {
+                //         guard let items = timer.items else {
+                //             continue
+                //         }
+                //         print("-----")
+                //         print(timer.name)
+                //         for item in items {
+                //             guard let innerTimers = // item.mealPlans else {
+                //                 continue
+                //             }
+                //             print("    ", item.displayName)
+                //             for innerTimer in innerTimers {
+                //                 print("        ", // innerTimer.name)
+                //             }
+                //         }
+                //     }
+                // }
             }
             .scrollContentBackground(.hidden)
 #if os(macOS)
@@ -116,37 +116,37 @@ struct MealPlanListView: View {
             // it doesn't work well with split view navigation on macOS
             // and to control visibility
             .if(presentSearchBar) { view in
-                    view.safeAreaInset(edge: .bottom) {
-                        HStack(spacing: 12) {
-                            HStack {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundStyle(.secondary)
-                                TextField("Search meal plans or foods", text: $searchText)
-                                if !searchText.isEmpty {
-                                    Button {
-                                        searchText = ""
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .buttonStyle(.plain)
+                view.safeAreaInset(edge: .bottom) {
+                    HStack(spacing: 12) {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(.secondary)
+                            TextField("Search meal plans or foods", text: $searchText)
+                            if !searchText.isEmpty {
+                                Button {
+                                    searchText = ""
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
                                 }
-                            }
-                            .padding(8)
-                            .background(.regularMaterial, in: Capsule())
-                            
-                            NavigationLink {
-                                MealPlanView(mealPlan: MealPlan(), isNew: true)
-                            } label: {
-                                Image(systemName: "plus")
-                                // .foregroundStyle(Color.secondaryColor)
-                                    .padding(10)
-                                    .background(.regularMaterial, in: Circle())
+                                .buttonStyle(.plain)
                             }
                         }
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
+                        .padding(8)
+                        .background(.regularMaterial, in: Capsule())
+                        
+                        NavigationLink {
+                            MealPlanView(mealPlan: MealPlan(), isNew: true)
+                        } label: {
+                            Image(systemName: "plus")
+                            // .foregroundStyle(Color.secondaryColor)
+                                .padding(10)
+                                .background(.regularMaterial, in: Circle())
+                        }
                     }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                }
             }
 #endif
         } content: { // these two are more applicable to regular horizontal size classes
@@ -197,7 +197,7 @@ struct MealPlanListView: View {
             //            ToolbarItem(placement: .secondaryAction) {
             Button(role: .destructive) {
                 do {
-                    try DataHelpers.resetMockData(context: modelContext)
+                    try DataHelpers.resetData(context: modelContext, reseed: true)
                 } catch {
                     print("Failed to reset data: \(error)")
                 }
