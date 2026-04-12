@@ -30,6 +30,11 @@ enum DataHelpers {
         let vars = try context.fetch(varDescriptor)
         vars.forEach { context.delete($0) }
         
+        // Deleting FoodGroup cascades to Ingredient, which cascades to Variety
+        let foodGroupDescriptor = FetchDescriptor<FoodGroup>()
+        let foodGroups = try context.fetch(foodGroupDescriptor)
+        foodGroups.forEach { context.delete($0) }
+        
         if !deferSave {
             try context.save()
         }

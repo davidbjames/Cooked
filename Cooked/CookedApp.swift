@@ -41,7 +41,7 @@ struct CookedApp: App {
         // Replace the identifier below with your actual iCloud container ID.
         let configuration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false,
+            isStoredInMemoryOnly: false, // stored in SQLite locally
             allowsSave: true,
             groupContainer: .automatic,
             cloudKitDatabase: .automatic // connects model with CloudKit
