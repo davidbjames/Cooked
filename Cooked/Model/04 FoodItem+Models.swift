@@ -17,13 +17,13 @@ final class FoodGroup {
     enum Kind: String, Hashable, Codable, CaseIterable {
         case staple
         case protein
-        case veg
+        case vegetable
         
         var title: String {
             switch self {
             case .staple: "Staple Foods"
             case .protein: "Protein Foods"
-            case .veg: "Vegetables"
+            case .vegetable: "Vegetables"
             }
         }
     }
@@ -67,6 +67,13 @@ final class FoodGroup {
         self.ingredients = generated.ingredients?.map { .init(generated: $0) }
     }
     
+    func addIngredient(_ ingredient: Ingredient) {
+        if ingredients == nil {
+            ingredients = []
+        }
+        ingredients?.append(ingredient)
+    }
+    
     // NOTE: do not override Equatable or Hashable implementations.
     // Use #Unique instead (if not using CloudKit).
     // If you need to check for value-based equality just create a custom
@@ -107,6 +114,13 @@ final class Ingredient {
         self.name = generated.name ?? "Food"
         self.varieties = generated.varieties?.map { .init(generated: $0) }
     }
+    
+    func addVariety(_ variety: Variety) {
+        if varieties == nil {
+            varieties = []
+        }
+        varieties?.append(variety)
+    }
 }
 
 
@@ -118,7 +132,7 @@ final class Variety {
     
     @Generable
     struct FoodVariety: Equatable {
-        @Guide(description: "The name of a food variety")
+        @Guide(description: "The name of a food variety, e.g. 'russet potatoes'.")
         let name: String
     }
     
@@ -144,6 +158,10 @@ final class Variety {
     
     init(generated: FoodVariety.PartiallyGenerated) {
         self.name = generated.name ?? "Some Food"
+    }
+    
+    func setName(_ name: String) {
+        self.name = name
     }
 }
 
