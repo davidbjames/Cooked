@@ -46,6 +46,8 @@ struct MealPlanListView: View {
         }
     }
     
+    @State private var resettingData: Bool = false
+    
     var body: some View {
         NavigationSplitView {
             List(filteredMealPlans) { mealPlan in
@@ -184,29 +186,37 @@ struct MealPlanListView: View {
                     // .tint(Color.primaryColor) // does not work here
                 }
             }
+            .disabled(resettingData)
             // .tint(Color.secondaryColor)
         }
         
 #if os(iOS)
         ToolbarItem(placement: .primaryAction) {
             EditButton()
+                .disabled(resettingData)
         }
 #endif
 #if DEBUG
         ToolbarItemGroup(placement: .destructiveAction) {
-            //            ToolbarItem(placement: .secondaryAction) {
+            
             Button(role: .destructive) {
-                do {
-                    try DataHelpers.resetData(context: modelContext, reseed: true)
-                } catch {
-                    print("Failed to reset data: \(error)")
+                resettingData = true
+                Task {
+                    do {
+                        try await DataHelpers.resetData(context: modelContext, reseed: true)
+                        resettingData = false
+                    } catch {
+                        print("Failed to reset data: \(error)")
+                        resettingData = false
+                    }
                 }
             } label: {
-                Label("Reset Mock Data", systemImage: "arrow.counterclockwise")
+                Label("Reset Mock Data", systemImage: "externaldrive.fill.badge.timemachine")
             }
+            .tint(.red)
             .help("Reset test data")
-            //            }
-            //            ToolbarItem(placement: .secondaryAction) {
+            .disabled(resettingData)
+
             Button(role: .destructive) {
                 do {
                     try DataHelpers.wipeAllData(context: modelContext)
@@ -218,6 +228,7 @@ struct MealPlanListView: View {
             }
             .tint(.red)
             .help("Delete all meal plans")
+            .disabled(resettingData)
         }
 #endif
     }

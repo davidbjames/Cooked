@@ -47,16 +47,14 @@ struct CookedApp: App {
             cloudKitDatabase: .automatic // connects model with CloudKit
             // no need for local persistent store URL (e.g. when syncing with CoreData)
         )
-        guard let modelContainer = try? ModelContainer(for: schema, configurations: [configuration]) else {
+        guard
+            let modelContainer = try? ModelContainer(
+                for: schema,
+                configurations: [configuration]
+            )
+        else {
             preconditionFailure()
         }
-        #if DEBUG
-        do {
-            try DataHelpers.seedMockData(context: modelContainer.mainContext)
-        } catch {
-            print("Failed to seed mock data: \(error)")
-        }
-        #endif
         return modelContainer
     }()
 

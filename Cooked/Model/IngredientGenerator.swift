@@ -27,9 +27,11 @@ final class IngredientGenerator {
             if includeInternationalIngredients {
                 "You may also include international ingredients common in other regions."
             }
-            "Food ingredients should only be those that are easily cooked. For example, 'rice' can be cooked easily, so include these types of foods. However, 'wheat' on its own cannot be cooked easily, so do not include these types of foods. Though you may include 'flour' for baking or other types of food that have been processed to make cooking easier. Another example is 'oats' which as a grain is not normally used for cooking -- it would normally be 'rolled oats' or some other variety of oats when used for cooking. These are just examples. Follow this pattern."
+            "Food ingredients should only be those that are easily cooked. For example, 'Rice' can be cooked easily, so include these types of foods. However, 'Wheat' on its own cannot be cooked easily, so do not include these types of foods. Though you may include 'Flour' for baking or other types of food that have been processed to make cooking easier. Another example is 'Oats' which as a grain is not normally used for cooking -- it would normally be 'Rolled Oats' or some other variety of oats when used for cooking. These are just examples. Follow this pattern."
             "Include potatoes as a staple - not a vegetable."
-            "Food varieties should always include the full name, variety plus food name, e.g. 'russet potatoes'"
+            "It's fine to include tomatoes as vegetables, or other fruits that are commonly used as vegetables."
+            "Food varieties should always include the full name, variety plus food name, e.g. 'Russet Potatoes'"
+            "Food ingredient and variety names should be title cased, e.g. 'Russet Potatoes'. In case of joining words like 'of' or similar words, these can be lower cased."
         }
         self.session = LanguageModelSession(
             tools: [],
@@ -37,7 +39,8 @@ final class IngredientGenerator {
         )
     }
     
-    func generateIngredients() async {
+    @discardableResult
+    func generateIngredients() async -> [FoodGroup] {
         do {
             let foodGroupKinds = FoodGroup.Kind.allCases.map(\.rawValue).joined(separator: ", ")
             let prompt = Prompt {
@@ -118,11 +121,12 @@ final class IngredientGenerator {
                     }
                 }
             }
-            print("****")
+            return foodGroups
             // po foodGroups?.flatMap { $0.ingredients?.flatMap { $0.varieties?.map { $0.name } } }
         } catch {
             self.error = error
             print(error)
+            return []
         }
     }
     

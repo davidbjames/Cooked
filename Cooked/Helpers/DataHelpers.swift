@@ -40,7 +40,8 @@ enum DataHelpers {
         }
     }
     
-    static func seedMockData(context: ModelContext, deferSave: Bool = false) throws {
+    @MainActor
+    private static func seedMockData(context: ModelContext, deferSave: Bool = false) async throws {
         
         let existing = try context.fetch(FetchDescriptor<MealPlan>())
         
@@ -49,56 +50,53 @@ enum DataHelpers {
             return
         }
         
-        // Seed food group hierarchy: FoodGroup → Ingredient → Variety
-        let chickenBreastVariety = Variety(name: "Boneless Chicken Breast")
-        let chickenIngredient = Ingredient(name: "Chicken", varieties: [chickenBreastVariety])
+        let generator = IngredientGenerator()
+        await generator.generateIngredients()
         
-        let basmatiRiceVariety = Variety(name: "Basmati Rice")
-        let riceIngredient = Ingredient(name: "Rice", varieties: [basmatiRiceVariety])
+        for foodGroup in generator.foodGroups {
+            context.insert(foodGroup)
+        }
         
-        let spaghettiVariety = Variety(name: "Spaghetti Pasta")
-        let pastaIngredient = Ingredient(name: "Pasta", varieties: [spaghettiVariety])
+        guard
+            let proteinGroup = generator.foodGroups.first(where: { $0.kind == .protein }),
+            let stapleGroup = generator.foodGroups.first(where: { $0.kind == .staple }),
+            let vegetableGroup = generator.foodGroups.first(where: { $0.kind == .vegetable }),
+            let firstProteinVariety = proteinGroup.ingredients?.first?.varieties?.first,
+            let firstStapleVariety = stapleGroup.ingredients?.first?.varieties?.first,
+            let lastStapleVariety = stapleGroup.ingredients?.last?.varieties?.last,
+            let firstVegetableVariety = vegetableGroup.ingredients?.first?.varieties?.first
+        else {
+            return
+        }
         
-        let orangeCarrotVariety = Variety(name: "Orange Carrots")
-        let carrotIngredient = Ingredient(name: "Carrots", varieties: [orangeCarrotVariety])
-        
-        let stapleGroup = FoodGroup(kind: .staple, ingredients: [riceIngredient, pastaIngredient])
-        let proteinGroup = FoodGroup(kind: .protein, ingredients: [chickenIngredient])
-        let vegetableGroup = FoodGroup(kind: .vegetable, ingredients: [carrotIngredient])
-        
-        // Seed food items using varieties
-        let chicken = FoodItem(variety: chickenBreastVariety)
-        let rice = FoodItem(variety: basmatiRiceVariety)
-        let pasta = FoodItem(variety: spaghettiVariety)
-        let carrots = FoodItem(variety: orangeCarrotVariety)
+        // Seed food items using generated varieties
+        let food1 = FoodItem(variety: firstProteinVariety)
+        let food2 = FoodItem(variety: firstStapleVariety)
+        let food3 = FoodItem(variety: lastStapleVariety)
+        let food4 = FoodItem(variety: firstVegetableVariety)
         
         let large = FoodVariable(name: "Large")
-        let basmati = FoodVariable(name: "Basmati")
+        let small = FoodVariable(name: "Small")
         
         // Create cooking items (some overlap in FoodItems across meal plans)
-        let item1 = CookingItem(food: chicken, variable: large, minutes: 45)
-        let item2 = CookingItem(food: rice, variable: basmati, minutes: 30)
-        let item3 = CookingItem(food: chicken, minutes: 25) // same food as item1, different variable/duration
-        let item4 = CookingItem(food: pasta, minutes: 12)
-        let item5 = CookingItem(food: carrots, minutes: 20)
+        let item1 = CookingItem(food: food1, variable: large, minutes: 45)
+        let item2 = CookingItem(food: food2, variable: small, minutes: 30)
+        let item3 = CookingItem(food: food1, minutes: 25) // same food as item1, different variable/duration
+        let item4 = CookingItem(food: food3, minutes: 12)
+        let item5 = CookingItem(food: food4, minutes: 20)
         
         // Two meal plans with variation and overlap
         let mealPlan1 = MealPlan(items: [item1, item2, item5], customName: "Dinner")
         let mealPlan2 = MealPlan(items: [item3, item4], customName: "Quick Meal")
         let mealPlan3 = MealPlan(items: [item2, item4])
         
-        // Insert food groups (cascades to ingredients and varieties)
-        context.insert(stapleGroup)
-        context.insert(proteinGroup)
-        context.insert(vegetableGroup)
-        
         // Insert food items, variables, cooking items, and meal plans
-        context.insert(chicken)
-        context.insert(rice)
-        context.insert(pasta)
-        context.insert(carrots)
+        context.insert(food1)
+        context.insert(food2)
+        context.insert(food3)
+        context.insert(food4)
         context.insert(large)
-        context.insert(basmati)
+        context.insert(small)
         context.insert(item1)
         context.insert(item2)
         context.insert(item3)
@@ -113,10 +111,11 @@ enum DataHelpers {
         }
     }
     
-    static func resetData(context: ModelContext, reseed: Bool = false) throws {
-        try wipeAllData(context: context, deferSave: true)
+    @MainActor
+    static func resetData(context: ModelContext, reseed: Bool = false, deferSave: Bool = false) async throws {
+        try wipeAllData(context: context, deferSave: deferSave)
         if reseed {
-            try seedMockData(context: context, deferSave: true)
+            try await seedMockData(context: context, deferSave: deferSave)
         }
         try context.save()
     }
