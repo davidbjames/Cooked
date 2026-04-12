@@ -59,13 +59,18 @@ enum DataHelpers {
         let spaghettiVariety = Variety(name: "Spaghetti Pasta")
         let pastaIngredient = Ingredient(name: "Pasta", varieties: [spaghettiVariety])
         
+        let orangeCarrotVariety = Variety(name: "Orange Carrots")
+        let carrotIngredient = Ingredient(name: "Carrots", varieties: [orangeCarrotVariety])
+        
         let stapleGroup = FoodGroup(kind: .staple, ingredients: [riceIngredient, pastaIngredient])
         let proteinGroup = FoodGroup(kind: .protein, ingredients: [chickenIngredient])
+        let vegetableGroup = FoodGroup(kind: .vegetable, ingredients: [carrotIngredient])
         
         // Seed food items using varieties
         let chicken = FoodItem(variety: chickenBreastVariety)
         let rice = FoodItem(variety: basmatiRiceVariety)
         let pasta = FoodItem(variety: spaghettiVariety)
+        let carrots = FoodItem(variety: orangeCarrotVariety)
         
         let large = FoodVariable(name: "Large")
         let basmati = FoodVariable(name: "Basmati")
@@ -75,26 +80,30 @@ enum DataHelpers {
         let item2 = CookingItem(food: rice, variable: basmati, minutes: 30)
         let item3 = CookingItem(food: chicken, minutes: 25) // same food as item1, different variable/duration
         let item4 = CookingItem(food: pasta, minutes: 12)
+        let item5 = CookingItem(food: carrots, minutes: 20)
         
         // Two meal plans with variation and overlap
-        let mealPlan1 = MealPlan(items: [item1, item2], customName: "Dinner")
+        let mealPlan1 = MealPlan(items: [item1, item2, item5], customName: "Dinner")
         let mealPlan2 = MealPlan(items: [item3, item4], customName: "Quick Meal")
         let mealPlan3 = MealPlan(items: [item2, item4])
         
         // Insert food groups (cascades to ingredients and varieties)
         context.insert(stapleGroup)
         context.insert(proteinGroup)
+        context.insert(vegetableGroup)
         
         // Insert food items, variables, cooking items, and meal plans
         context.insert(chicken)
         context.insert(rice)
         context.insert(pasta)
+        context.insert(carrots)
         context.insert(large)
         context.insert(basmati)
         context.insert(item1)
         context.insert(item2)
         context.insert(item3)
         context.insert(item4)
+        context.insert(item5)
         context.insert(mealPlan1)
         context.insert(mealPlan2)
         context.insert(mealPlan3)
