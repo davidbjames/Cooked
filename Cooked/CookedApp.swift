@@ -25,44 +25,11 @@ import SwiftData
 @main
 struct CookedApp: App {
     
-    // Shared ModelContainer configured for CloudKit sync and sharing
-    var sharedModelContainer: ModelContainer = {
-        // Note: these are indented to reveal the hierarchy.
-        let schema = Schema([
-            MealPlan.self,
-                CookingItem.self, // 1..*
-                    FoodItem.self, // 1
-                        FoodGroup.self,
-                        Ingredient.self,
-                        Variety.self,
-                    FoodVariable.self, // 1
-        ])
-        // Configure CloudKit with sharing at initialization time.
-        // Replace the identifier below with your actual iCloud container ID.
-        let configuration = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false, // stored in SQLite locally
-            allowsSave: true,
-            groupContainer: .automatic,
-            cloudKitDatabase: .automatic // connects model with CloudKit
-            // no need for local persistent store URL (e.g. when syncing with CoreData)
-        )
-        guard
-            let modelContainer = try? ModelContainer(
-                for: schema,
-                configurations: [configuration]
-            )
-        else {
-            preconditionFailure()
-        }
-        return modelContainer
-    }()
-
     var body: some Scene {
         WindowGroup {
             MealPlanListView()
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(ModelContainer.sharedModelContainer)
     }
 }
 
