@@ -59,29 +59,3 @@ struct TimerRunView: View {
         }
     }
 }
-
-#Preview {
-    let container = try! ModelContainer(
-        for: FoodItem.self, FoodVariable.self, CookingItem.self, MealPlan.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let ctx = container.mainContext
-
-    let chicken = FoodItem(name: "Chicken")
-    let rice = FoodItem(name: "Rice")
-    let item1 = CookingItem(food: chicken, minutes: 45)
-    let item2 = CookingItem(food: rice, minutes: 30)
-    let mealPlan = MealPlan(items: [item1, item2])
-
-    ctx.insert(chicken)
-    ctx.insert(rice)
-    ctx.insert(item1)
-    ctx.insert(item2)
-    ctx.insert(mealPlan)
-
-    return NavigationStack {
-        TimerRunView(mealPlan: mealPlan)
-    }
-    .modelContainer(container)
-}
-

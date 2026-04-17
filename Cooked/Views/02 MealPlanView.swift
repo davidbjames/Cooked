@@ -61,7 +61,7 @@ struct MealPlanView: View {
                             .tag(item.persistentModelID)
                             .swipeActions(edge: .trailing, content: {
                                 Button(role: .destructive) {
-                                    item.delete(in: modelContext)
+                                    modelContext.delete(item)
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -151,7 +151,6 @@ struct MealPlanView: View {
             .safeAreaInset(edge: .bottom) {
                 Button {
                     modelContext.insert(mealPlan)
-                    try? modelContext.save()
                     navigateToRun = true
                 } label: {
                     Label("Start", systemImage: "play.fill")
@@ -183,7 +182,6 @@ struct MealPlanView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         modelContext.insert(mealPlan)
-                        try? modelContext.save()
                         dismiss()
                     }
                 }
@@ -210,47 +208,5 @@ struct MealPlanView: View {
 //        mealPlan.items?.move(fromOffsets: source, toOffset: destination)
 //    }
 
-}
-
-#Preview {
-    let container = try! ModelContainer(
-        for: FoodItem.self, FoodVariable.self, CookingItem.self, MealPlan.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let context = container.mainContext
-    
-    let chicken = FoodItem(name: "Chicken")
-    let steak = FoodItem(name: "Steak")
-    let weight = FoodVariable(name: "1.2 kg")
-    let doneness = FoodVariable(name: "Medium-rare")
-
-    let item1 = CookingItem(food: chicken, variable: weight, minutes: 50)
-    let item2 = CookingItem(food: steak, variable: doneness, minutes: 12)
-
-    let mealPlan = MealPlan(items: [item1, item2], customName: "Sunday Dinner")
-
-    context.insert(chicken)
-    context.insert(steak)
-    context.insert(weight)
-    context.insert(doneness)
-    context.insert(item1)
-    context.insert(item2)
-    context.insert(mealPlan)
-
-    return NavigationStack {
-        MealPlanView(mealPlan: mealPlan)
-    }
-    .modelContainer(container)
-}
-
-#Preview("Empty Meal Plan") {
-    let container = try! ModelContainer(
-        for: FoodItem.self, FoodVariable.self, CookingItem.self, MealPlan.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    return NavigationStack {
-        MealPlanView(mealPlan: MealPlan(), isNew: true)
-    }
-    .modelContainer(container)
 }
 

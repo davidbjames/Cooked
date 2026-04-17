@@ -1,0 +1,33 @@
+//
+//  FoodVariable.swift
+//  Cooked
+//
+//  Created by David James on 29/01/2026.
+//
+
+import Foundation
+import SwiftData
+
+extension SchemaV1 {
+    
+    @Model
+    final class FoodVariable {
+        
+        private(set) var name: String = ""
+        
+        private(set) var createdAt: Date = Date()
+        
+        @Relationship(inverse: \CookingItem.foodVariable)
+        private(set) var items: [CookingItem]?
+        
+        init(name: String) {
+            self.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            self.createdAt = Date()
+        }
+    }
+}
+
+extension FoodVariable {
+    
+    
+}

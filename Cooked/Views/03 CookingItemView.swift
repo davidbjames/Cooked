@@ -19,7 +19,7 @@ struct CookingItemView: View {
     var onSave: (CookingItem) -> Void
 
     // Food item selection/creation
-    @Query(sort: \FoodItem.name) private var foodItems: [FoodItem]
+    @Query(sort: \FoodItem.variety) private var foodItems: [FoodItem]
     @State private var foodSearch: String = ""
     @State private var selectedFood: FoodItem?
 
@@ -162,9 +162,9 @@ struct CookingItemView: View {
         if let existing = foodItems.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
             selectedFood = existing
         } else {
-            let new = FoodItem(name: name)
-            modelContext.insert(new)
-            selectedFood = new
+//            let new = FoodItem(name: name)
+//            modelContext.insert(new)
+//            selectedFood = new
         }
         foodSearch = ""
     }

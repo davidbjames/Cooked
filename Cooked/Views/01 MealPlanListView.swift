@@ -66,7 +66,7 @@ struct MealPlanListView: View {
                 }
                 .contextMenu { // long press
                     Button(role: .destructive) {
-                        mealPlan.delete(in: modelContext)
+                        modelContext.delete(mealPlan)
                     } label: {
                         Label("Delete", systemImage: "trash")
                     }
@@ -76,7 +76,7 @@ struct MealPlanListView: View {
                     // This reveals action buttons.
                     // Full swipe causes the first action to fire.
                     Button(role: .destructive) {
-                        mealPlan.delete(in: modelContext)
+                        modelContext.delete(mealPlan)
                     } label: {
                         Label("Delete", systemImage: "trash")
                     }
@@ -138,7 +138,7 @@ struct MealPlanListView: View {
                         .background(.regularMaterial, in: Capsule())
                         
                         NavigationLink {
-                            MealPlanView(mealPlan: MealPlan(), isNew: true)
+                            MealPlanView(mealPlan: MealPlan(items: [], customName: nil), isNew: true)
                         } label: {
                             Image(systemName: "plus")
                             // .foregroundStyle(Color.secondaryColor)
@@ -177,7 +177,7 @@ struct MealPlanListView: View {
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             NavigationLink {
-                MealPlanView(mealPlan: MealPlan(), isNew: true)
+                MealPlanView(mealPlan: MealPlan(items: [], customName: nil), isNew: true)
             } label: {
                 HStack {
                     Image(systemName: "plus")
@@ -200,23 +200,12 @@ struct MealPlanListView: View {
         ToolbarItemGroup(placement: .destructiveAction) {
             
             Button(role: .destructive) {
-                resettingData = true
-                Task {
-                    do {
-                        try await DataHelpers.resetData(context: modelContext, reseed: true)
-                        resettingData = false
-                    } catch {
-                        print("Failed to reset data: \(error)")
-                        resettingData = false
-                    }
-                }
+                // use this for miscellaneous testing
             } label: {
-                Label("Reset Mock Data", systemImage: "externaldrive.fill.badge.timemachine")
+                Label("Test", systemImage: "wrench.and.screwdriver")
             }
-            .tint(.red)
-            .help("Reset test data")
-            .disabled(resettingData)
-
+            .disabled(true)
+            
             Button(role: .destructive) {
                 do {
                     try DataHelpers.wipeAllData(context: modelContext)
@@ -224,10 +213,28 @@ struct MealPlanListView: View {
                     print("Failed to wipe data: \(error)")
                 }
             } label: {
-                Label("Wipe Data", systemImage: "trash")
+                Label("Wipe Data", systemImage: "externaldrive.badge.minus")
             }
             .tint(.red)
             .help("Delete all meal plans")
+            .disabled(resettingData)
+            
+            Button(role: .destructive) {
+                resettingData = true
+                Task {
+                    do {
+                        try await DataHelpers.seedMockData(context: modelContext)
+                        resettingData = false
+                    } catch {
+                        print("Failed to reset data: \(error)")
+                        resettingData = false
+                    }
+                }
+            } label: {
+                Label("Seed Data", systemImage: "externaldrive.badge.plus")
+            }
+            .tint(.red)
+            .help("Add seed data")
             .disabled(resettingData)
         }
 #endif
@@ -245,37 +252,4 @@ struct MealPlanListView: View {
     }
 }
 
-
-#Preview {
-    let container = try! ModelContainer(
-        for: FoodItem.self, FoodVariable.self, CookingItem.self, MealPlan.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let context = container.mainContext
-    
-    // Seed mock data
-    let chicken = FoodItem(name: "Chicken")
-    let rice = FoodItem(name: "Rice")
-    let pasta = FoodItem(name: "Pasta")
-    let large = FoodVariable(name: "Large")
-    let item1 = CookingItem(food: chicken, minutes: 45)
-    let item2 = CookingItem(food: rice, minutes: 30)
-    let item3 = CookingItem(food: pasta, variable: large, minutes: 12)
-    
-    let mealPlan1 = MealPlan(items: [item1, item2])
-    let mealPlan2 = MealPlan(items: [item3], customName: "Quick Lunch")
-    
-    context.insert(chicken)
-    context.insert(rice)
-    context.insert(pasta)
-    context.insert(large)
-    context.insert(item1)
-    context.insert(item2)
-    context.insert(item3)
-    context.insert(mealPlan1)
-    context.insert(mealPlan2)
-    
-    return MealPlanListView()
-        .modelContainer(container)
-}
 

@@ -41,67 +41,63 @@ enum DataHelpers {
     }
     
     @MainActor
-    private static func seedMockData(context: ModelContext, deferSave: Bool = false) async throws {
+    static func seedMockData(context: ModelContext, deferSave: Bool = false) async throws {
         
-        let existing = try context.fetch(FetchDescriptor<MealPlan>())
+        try await IngredientGenerator(modelContext: context).generateIngredients()
         
-        guard existing.isEmpty else {
-            // already seeded
-            return
-        }
-        
-        let generator = IngredientGenerator()
-        await generator.generateIngredients()
-        
-        for foodGroup in generator.foodGroups {
-            context.insert(foodGroup)
-        }
+        let foodGroups = try context.fetch(FetchDescriptor<FoodGroup>())
+
+        // Create test data
         
         guard
-            let proteinGroup = generator.foodGroups.first(where: { $0.kind == .protein }),
-            let stapleGroup = generator.foodGroups.first(where: { $0.kind == .staple }),
-            let vegetableGroup = generator.foodGroups.first(where: { $0.kind == .vegetable }),
-            let firstProteinVariety = proteinGroup.ingredients?.first?.varieties?.first,
-            let firstStapleVariety = stapleGroup.ingredients?.first?.varieties?.first,
-            let lastStapleVariety = stapleGroup.ingredients?.last?.varieties?.last,
-            let firstVegetableVariety = vegetableGroup.ingredients?.first?.varieties?.first
+            let proteinGroup = foodGroups.first(where: { $0.kind == .protein }),
+            let stapleGroup = foodGroups.first(where: { $0.kind == .staple }),
+            let vegetableGroup = foodGroups.first(where: { $0.kind == .vegetable }),
+            let firstProteinIngredient = proteinGroup.ingredients?.first,
+            let firstProteinVariety = firstProteinIngredient.varieties?.first,
+            let firstStapleIngredient = stapleGroup.ingredients?.first,
+            let firstStapleVariety = firstStapleIngredient.varieties?.first,
+            let lastStapleIngredient = stapleGroup.ingredients?.last,
+            let lastStapleVariety = lastStapleIngredient.varieties?.last,
+            let firstVegetableIngredient = vegetableGroup.ingredients?.first,
+            let firstVegetableVariety = firstVegetableIngredient.varieties?.first
         else {
             return
         }
         
         // Seed food items using generated varieties
-        let food1 = FoodItem(variety: firstProteinVariety)
-        let food2 = FoodItem(variety: firstStapleVariety)
-        let food3 = FoodItem(variety: lastStapleVariety)
-        let food4 = FoodItem(variety: firstVegetableVariety)
+        let proteinFood1 = FoodItem(group: proteinGroup, ingredient: firstProteinIngredient, variety: firstProteinVariety)
+        let stapleFood1 = FoodItem(group: stapleGroup, ingredient: firstStapleIngredient, variety: firstStapleVariety)
+        let stapleFood2 = FoodItem(group: stapleGroup, ingredient: lastStapleIngredient, variety: lastStapleVariety)
+        let vegetableFood1 = FoodItem(group: vegetableGroup, ingredient: firstVegetableIngredient, variety: firstVegetableVariety)
         
         let large = FoodVariable(name: "Large")
         let small = FoodVariable(name: "Small")
         
         // Create cooking items (some overlap in FoodItems across meal plans)
-        let item1 = CookingItem(food: food1, variable: large, minutes: 45)
-        let item2 = CookingItem(food: food2, variable: small, minutes: 30)
-        let item3 = CookingItem(food: food1, minutes: 25) // same food as item1, different variable/duration
-        let item4 = CookingItem(food: food3, minutes: 12)
-        let item5 = CookingItem(food: food4, minutes: 20)
+        let proteinItem1 = CookingItem(food: proteinFood1, variable: large, minutes: 45)
+        let stapleItem1 = CookingItem(food: stapleFood1, variable: small, minutes: 30)
+        let proteinItem2 = CookingItem(food: proteinFood1, minutes: 25) // same food as item1, different variable/duration
+        let stapleItem2 = CookingItem(food: stapleFood2, minutes: 12)
+        let vegetableItem2 = CookingItem(food: vegetableFood1, minutes: 20)
         
         // Two meal plans with variation and overlap
-        let mealPlan1 = MealPlan(items: [item1, item2, item5], customName: "Dinner")
-        let mealPlan2 = MealPlan(items: [item3, item4], customName: "Quick Meal")
-        let mealPlan3 = MealPlan(items: [item2, item4])
+        let mealPlan1 = MealPlan(items: [proteinItem1, stapleItem1, vegetableItem2], customName: "Dinner")
+        let mealPlan2 = MealPlan(items: [proteinItem2, stapleItem2], customName: "Quick Meal")
+        let mealPlan3 = MealPlan(items: [proteinItem1, stapleItem2], customName: nil)
         
         // Insert food items, variables, cooking items, and meal plans
-        context.insert(food1)
-        context.insert(food2)
-        context.insert(food3)
-        context.insert(food4)
+        context.insert(proteinFood1)
+        context.insert(stapleFood1)
+        context.insert(stapleFood2)
+        context.insert(vegetableFood1)
         context.insert(large)
         context.insert(small)
-        context.insert(item1)
-        context.insert(item2)
-        context.insert(item3)
-        context.insert(item4)
-        context.insert(item5)
+        context.insert(proteinItem1)
+        context.insert(stapleItem1)
+        context.insert(proteinItem2)
+        context.insert(stapleItem2)
+        context.insert(vegetableItem2)
         context.insert(mealPlan1)
         context.insert(mealPlan2)
         context.insert(mealPlan3)
@@ -110,14 +106,49 @@ enum DataHelpers {
             try context.save()
         }
     }
+}
+
+extension ModelContext {
+    
+    func hasData<T: PersistentModel>(for type: T.Type) -> Bool {
+        guard let existing = try? fetch(FetchDescriptor<T>()) else {
+            return false
+        }
+        return !existing.isEmpty
+    }
     
     @MainActor
-    static func resetData(context: ModelContext, reseed: Bool = false, deferSave: Bool = false) async throws {
-        try wipeAllData(context: context, deferSave: deferSave)
-        if reseed {
-            try await seedMockData(context: context, deferSave: deferSave)
-        }
-        try context.save()
+    func fetchAll<T: PersistentModel>(_: T.Type) -> [T] {
+        let descriptor = FetchDescriptor<T>()
+        return (try? fetch(descriptor)) ?? []
+    }
+    
+    
+    @MainActor
+    func fetchUserProfile() -> Profile? {
+        let descriptor = FetchDescriptor<Profile>()
+        return try? fetch(descriptor).first
     }
 }
 
+extension Array<FoodGroup> {
+    
+    /// Given an array of food groups, get the food names and varieties for each of these.
+    func getFoodNames() -> [String: [String]] {
+        var result: [String: [String]] = [:]
+        for foodGroup in self {
+            guard let ingredients = foodGroup.ingredients else {
+                continue
+            }
+            for ingredient in ingredients {
+                guard let varieties = ingredient.varieties else {
+                    continue
+                }
+                for variety in varieties {
+                    result[ingredient.name, default: []].append(variety.name)
+                }
+            }
+        }
+        return result
+    }
+}
