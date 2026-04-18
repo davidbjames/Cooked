@@ -8,5 +8,6 @@
 enum Constants {
     
     static let generatedIngredientsCount = 3...3
-    static let generatedVarietiesCount = 3...3
+    /// Varieties can be 0 in case there is not a reasonable variety
+    static let generatedVarietiesCount = 0...3
 }

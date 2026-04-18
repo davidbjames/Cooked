@@ -79,7 +79,7 @@ struct FoodListView: View {
         .navigationTitle("Ingredient")
         .searchable(text: $search)
         .onSubmit(of: .search) {
-            // Select first search and dismiss if user hits enter.
+            // If user hits enter, select first search and dismiss
             guard let first = foodItems.first else {
                 return
             }
@@ -96,17 +96,25 @@ struct FoodListView: View {
         }
         .alert("Apple Intelligence", isPresented: showGeneratorError) {
             Button("OK", role: .cancel) {
+                if case let .unavailable(error) = generationState, error == .deviceNotEligible {
+                    dismiss()
+                }
                 generationState = nil
             }
         } message: {
             if case let .unavailable(error) = generationState {
                 switch error {
-                case .appleIntelligenceNotEnabled: Text("Apple Intelligence is not enabled. Please check it is enabled in Settings and try again.")
-                case .deviceNotEligible: Text("This device does not support Apple Intelligence. Please add your ingredient by hand.")
-                case .modelNotReady: Text("Please try again later. In the mean time you can add your ingredient by hand.")
+                case .appleIntelligenceNotEnabled:
+                    Text("Apple Intelligence is not enabled. Please check it is enabled in Settings and try again.")
+                case .deviceNotEligible:
+                    Text("This device does not support Apple Intelligence. Please add your ingredient by hand.")
+                case .modelNotReady:
+                    Text("Apple Intelligence not read. Please try again later. In the mean time you can add your ingredient by hand.")
                 @unknown default:
                     fatalError()
                 }
+            } else {
+                Text("Please try again later.")
             }
         }
     }

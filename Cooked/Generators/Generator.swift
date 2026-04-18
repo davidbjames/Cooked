@@ -24,6 +24,12 @@ extension SystemLanguageModel.Availability {
         case .unavailable: false
         }
     }
+    var isSupported: Bool {
+        switch self {
+        case .unavailable(.deviceNotEligible): false
+        default: true
+        }
+    }
 }
 
 /// Observable view model responsible for generating anything from the local SLM
