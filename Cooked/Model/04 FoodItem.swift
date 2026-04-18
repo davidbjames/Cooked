@@ -17,21 +17,21 @@ extension SchemaV1 {
     final class FoodItem {
         
         @Relationship(inverse: \FoodGroup.foodItems)
-        private(set) var group: FoodGroup?
+        var group: FoodGroup?
         
         // TBD: allow the user to select just an ingredient
         // In most cases, for cooking that is good enough,
         // without the variety (e.g. "potatoes" vs. "piper potatoes")
         
         @Relationship(inverse: \Ingredient.foodItems)
-        private(set) var ingredient: Ingredient?
+        var ingredient: Ingredient?
         
         @Relationship(inverse: \Variety.foodItems)
-        private(set) var variety: Variety?
+        var variety: Variety?
         
-        private(set) var customName: String?
+        var customName: String?
         
-        private(set) var createdAt: Date = Date()
+        var createdAt: Date = Date()
         
         /// Support querying cooking items that have a particular food item
         /// (e.g. all cooking items that use potatoes).
@@ -40,7 +40,7 @@ extension SchemaV1 {
         @Relationship
         private(set) var cookingItems: [CookingItem]?
         
-        init(group: FoodGroup, ingredient: Ingredient, variety: Variety) {
+        init(group: FoodGroup, ingredient: Ingredient, variety: Variety?) {
             self.group = group
             self.ingredient = ingredient
             self.variety = variety
@@ -51,6 +51,12 @@ extension SchemaV1 {
 extension FoodItem {
     
     var name: String {
-        customName ?? variety?.name ?? ingredient?.name ?? "Ingredient"
+        if let customName {
+            customName
+        } else if let name = (variety?.name ?? ingredient?.name) {
+            name.capitalized(with: Locale.current)
+        } else {
+            "Ingredient"
+        }
     }
 }

@@ -54,17 +54,17 @@ enum DataHelpers {
             let stapleGroup = foodGroups.first(where: { $0.kind == .staple }),
             let vegetableGroup = foodGroups.first(where: { $0.kind == .vegetable }),
             let firstProteinIngredient = proteinGroup.ingredients?.first,
-            let firstProteinVariety = firstProteinIngredient.varieties?.first,
             let firstStapleIngredient = stapleGroup.ingredients?.first,
-            let firstStapleVariety = firstStapleIngredient.varieties?.first,
             let lastStapleIngredient = stapleGroup.ingredients?.last,
-            let lastStapleVariety = lastStapleIngredient.varieties?.last,
-            let firstVegetableIngredient = vegetableGroup.ingredients?.first,
-            let firstVegetableVariety = firstVegetableIngredient.varieties?.first
+            let firstVegetableIngredient = vegetableGroup.ingredients?.first
         else {
             return
         }
-        
+        let firstProteinVariety = firstProteinIngredient.varieties?.first
+        let firstStapleVariety = firstStapleIngredient.varieties?.first
+        let lastStapleVariety = lastStapleIngredient.varieties?.last
+        let firstVegetableVariety = firstVegetableIngredient.varieties?.first
+
         // Seed food items using generated varieties
         let proteinFood1 = FoodItem(group: proteinGroup, ingredient: firstProteinIngredient, variety: firstProteinVariety)
         let stapleFood1 = FoodItem(group: stapleGroup, ingredient: firstStapleIngredient, variety: firstStapleVariety)

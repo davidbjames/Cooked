@@ -44,9 +44,9 @@ extension MealPlan {
     
     /// Computed name when customName is nil or empty:
     /// 0 items: "Meal Plan"
-    /// 1 item: "A"
-    /// 2 items: "A & B"
-    /// 3+ items: "A, B, ..., Y & Z"
+    /// 1 item: "Potatoes"
+    /// 2 items: "Potatoes & Lamb"
+    /// 3+ items: "Potatoes, Lamb & Tomatoes"
     var name: String {
         if let customName, !customName.isEmpty {
             return customName
@@ -71,11 +71,14 @@ extension MealPlan {
         }
     }
     
+    /// Summary of food items "Potatoes, Lamb, Tomatoes"
     var summary: String? {
         guard let items, !items.isEmpty else {
             return nil
         }
-        return items.compactMap { $0.foodItem?.name }.joined(separator: ", ")
+        return items.compactMap {
+            !$0.foodName.isEmpty ? $0.foodName : nil
+        }.joined(separator: ", ")
     }
     
     var hasCookingItems: Bool {

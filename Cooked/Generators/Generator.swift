@@ -11,6 +11,11 @@ import SwiftData
 
 enum GeneratorError: Error {
     case availability(SystemLanguageModel.Availability.UnavailableReason)
+    var reason: SystemLanguageModel.Availability.UnavailableReason {
+        switch self {
+        case .availability(let reason): reason
+        }
+    }
 }
 
 /// Observable view model responsible for generating anything from the local SLM
