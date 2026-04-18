@@ -17,3 +17,12 @@ extension View {
         }
     }
 }
+
+extension Binding {
+    /// Creates a read-only binding with only a getter.
+    /// Use this if you need a dynamic Binding but you
+    /// don't need the setter.
+    init(get: @Sendable @escaping () -> Value) {
+        self.init(get: get, set: { _ in })
+    }
+}

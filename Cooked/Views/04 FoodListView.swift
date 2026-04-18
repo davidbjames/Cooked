@@ -18,7 +18,7 @@ struct FoodListView: View {
     
     @Query private var _foodItems: [FoodItem]
     @State private var search: String = ""
-
+    
     var foodItems: [FoodItem] {
         let search = search.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !search.isEmpty else {
@@ -34,8 +34,16 @@ struct FoodListView: View {
     @State private var generationState: SystemLanguageModel.Availability?
     @State private var ingredientGenerator: IngredientGenerator?
     
-    @State private var showIngredients = false
-    @State private var showGeneratorError = false
+    private var showIngredients: Binding<Bool> {
+        .init { generationState == .available }
+    }
+    
+    private var showGeneratorError: Binding<Bool> {
+        .init {
+            if case .unavailable = generationState { return true }
+            return false
+        }
+    }
     
     var body: some View {
         List {
@@ -60,7 +68,6 @@ struct FoodListView: View {
                 do {
                     ingredientGenerator = try IngredientGenerator(modelContext: modelContext)
                     generationState = .available
-                    showIngredients = true
                 } catch let error as GeneratorError {
                     generationState = .unavailable(error.reason)
                 } catch {
@@ -80,7 +87,7 @@ struct FoodListView: View {
             selectedFood = first
             dismiss()
         }
-        .sheet(isPresented: $showIngredients) {
+        .sheet(isPresented: showIngredients, onDismiss: { generationState = nil }) {
             if let ingredientGenerator {
                 NavigationStack {
                     IngredientListView(selectedFood: _selectedFood, generator: ingredientGenerator)
@@ -88,8 +95,10 @@ struct FoodListView: View {
                 .presentationDetents([.large])
             }
         }
-        .alert("Oops", isPresented: $showGeneratorError) {
-            Button("OK", role: .cancel) {}
+        .alert("Oops", isPresented: showGeneratorError) {
+            Button("OK", role: .cancel) {
+                generationState = nil
+            }
         } message: {
             if case let .unavailable(error) = generationState {
                 switch error {
