@@ -12,17 +12,15 @@ import UIKit
 #endif
 
 struct CookingItemView: View {
+    
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     // Callback to pass the created CookingItem back to the caller
     var onSave: (CookingItem) -> Void
 
-    // Food item selection/creation
-    @Query(sort: \FoodItem.variety) private var foodItems: [FoodItem]
-    @State private var foodSearch: String = ""
     @State private var selectedFood: FoodItem?
-
+    
     // Food variable selection/creation
     @Query(sort: \FoodVariable.name) private var variables: [FoodVariable]
     @State private var variableText: String = ""
@@ -34,28 +32,15 @@ struct CookingItemView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Food Item")) {
-                Picker("Select", selection: Binding<FoodItem?>(
-                    get: { selectedFood },
-                    set: { selectedFood = $0 }
-                )) {
-                    ForEach(filteredFoodItems, id: \.persistentModelID) { item in
-                        Text(item.name).tag(Optional(item))
-                    }
-                }
-                #if os(iOS)
-                .pickerStyle(.navigationLink)
-                #endif
-                TextField("Search or add new food", text: $foodSearch)
-                    .onSubmit {
-                        addFoodIfNeeded()
-                    }
-
-                if !foodSearch.isEmpty && !foodItems.map({ $0.name.lowercased() }).contains(foodSearch.lowercased()) {
-                    Button {
-                        addFoodIfNeeded()
-                    } label: {
-                        Label("Add “\(foodSearch)”", systemImage: "plus")
+            Section(header: Text("Ingredient")) {
+                NavigationLink {
+                    FoodListView(selectedFood: $selectedFood)
+                } label: {
+                    HStack {
+                        Text("Select")
+                        Spacer()
+                        Text(selectedFood?.name ?? "None")
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -114,10 +99,12 @@ struct CookingItemView: View {
                 .disabled(!canSave)
             }
         }
-        .navigationTitle("New Cooking Item")
+        .navigationTitle("Add Item")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
+                Button("Cancel") {
+                    dismiss()
+                }
             }
         }
         .onChange(of: variableText) { _, newValue in
@@ -125,16 +112,6 @@ struct CookingItemView: View {
             if let selected = selectedVariable, selected.name.caseInsensitiveCompare(newValue) != .orderedSame {
                 selectedVariable = nil
             }
-        }
-    }
-
-    private var filteredFoodItems: [FoodItem] {
-        let q = foodSearch.trimmingCharacters(in: .whitespacesAndNewlines)
-        if q.isEmpty {
-            return foodItems
-        } else {
-            let lower = q.lowercased()
-            return foodItems.filter { $0.name.lowercased().contains(lower) }
         }
     }
 
@@ -152,21 +129,6 @@ struct CookingItemView: View {
         guard let _ = selectedFood else { return false }
         let totalSeconds = parsedSeconds()
         return totalSeconds > 0
-    }
-
-    private func addFoodIfNeeded() {
-        let name = foodSearch.trimmingCharacters(in: .whitespacesAndNewlines)
-        if name.isEmpty {
-            return
-        }
-        if let existing = foodItems.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
-            selectedFood = existing
-        } else {
-//            let new = FoodItem(name: name)
-//            modelContext.insert(new)
-//            selectedFood = new
-        }
-        foodSearch = ""
     }
 
     private func pickOrCreateVariableIfNeeded() {
