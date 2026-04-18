@@ -29,7 +29,7 @@ struct MealPlanListView: View {
     
     // TODO: order these meal plans by the most recently used
     
-    var filteredMealPlans: [MealPlan] {
+    var mealPlans: [MealPlan] {
         let search = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         // for this to work one must check the characters for white space and new lines
         guard !search.isEmpty else {
@@ -50,7 +50,7 @@ struct MealPlanListView: View {
     
     var body: some View {
         NavigationSplitView {
-            List(filteredMealPlans) { mealPlan in
+            List(mealPlans) { mealPlan in
                 NavigationLink {
                     MealPlanView(mealPlan: mealPlan)
                 } label: {
@@ -138,7 +138,7 @@ struct MealPlanListView: View {
                         .background(.regularMaterial, in: Capsule())
                         
                         NavigationLink {
-                            MealPlanView(mealPlan: MealPlan(items: [], customName: nil), isNew: true)
+                            MealPlanView(mealPlan: MealPlan(items: [], customName: nil))
                         } label: {
                             Image(systemName: "plus")
                             // .foregroundStyle(Color.secondaryColor)
@@ -177,7 +177,7 @@ struct MealPlanListView: View {
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             NavigationLink {
-                MealPlanView(mealPlan: MealPlan(items: [], customName: nil), isNew: true)
+                MealPlanView(mealPlan: MealPlan(items: [], customName: nil))
             } label: {
                 HStack {
                     Image(systemName: "plus")

@@ -10,21 +10,17 @@ import SwiftData
 
 struct MealPlanView: View {
     
-    @Environment(\.modelContext)
-    private var modelContext: ModelContext
-    
-    @Environment(\.dismiss)
-    private var dismiss: DismissAction
-
-    @State private var selection = Set<PersistentIdentifier>()
-    @State private var showingNewItemSheet = false
-    @State private var navigateToRun = false
-    
-    @State private var isEditing = false
+    @Environment(\.modelContext) private var modelContext: ModelContext
+    @Environment(\.dismiss) private var dismiss: DismissAction
 
     @State var mealPlan: MealPlan
-    var isNew: Bool = false
     
+    // @State private var selection = Set<PersistentIdentifier>()
+    // @State private var isEditing = false
+    // var isNew: Bool = false
+    
+    @State private var showNewCookingItemSheet = false
+    @State private var navigateToRunTimer = false
     @State private var refreshId = UUID() // used to update times
 
     var body: some View {
@@ -67,12 +63,12 @@ struct MealPlanView: View {
                                 }
                             })
                         }
-//                            .onDelete { offsets in
-//                                for index in offsets {
-//                                    mealPlan.items?.remove(at: index)
-//                                }
-//                            }
-//                            .onMove(perform: moveItems)
+                        // .onDelete { offsets in
+                        //     for index in offsets {
+                        //         mealPlan.items?.remove(at: index)
+                        //     }
+                        // }
+                        // .onMove(perform: moveItems)
                     } else {
                         ContentUnavailableView(
                             "No cooking items",
@@ -85,7 +81,7 @@ struct MealPlanView: View {
                 } footer: {
                     HStack {
                         Button {
-                            showingNewItemSheet = true
+                            showNewCookingItemSheet = true
                         } label: {
                             Label("Add Item", systemImage: "plus")
                         }
@@ -151,7 +147,7 @@ struct MealPlanView: View {
             .safeAreaInset(edge: .bottom) {
                 Button {
                     modelContext.insert(mealPlan)
-                    navigateToRun = true
+                    navigateToRunTimer = true
                 } label: {
                     Label("Start", systemImage: "play.fill")
                         .font(.title2.bold())
@@ -164,7 +160,7 @@ struct MealPlanView: View {
                 .disabled(!mealPlan.hasCookingItems)
             }
         }
-        .navigationDestination(isPresented: $navigateToRun) {
+        .navigationDestination(isPresented: $navigateToRunTimer) {
             TimerRunView(mealPlan: mealPlan)
         }
         .navigationTitle(mealPlan.name)
@@ -194,13 +190,13 @@ struct MealPlanView: View {
             }
 #endif
         }
-        .sheet(isPresented: $showingNewItemSheet) {
+        .sheet(isPresented: $showNewCookingItemSheet) {
             NavigationStack {
                 CookingItemView { newItem in
                     mealPlan.addCookingItem(newItem)
                 }
             }
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
         }
     }
 
