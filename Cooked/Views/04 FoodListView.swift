@@ -35,14 +35,13 @@ struct FoodListView: View {
     @State private var ingredientGenerator: IngredientGenerator?
     
     private var showIngredients: Binding<Bool> {
-        .init { generationState == .available }
+        let state = generationState
+        // (local capture ^^ because Binding closure vv is nonisolated but we are in main right now)
+        return .init { state == .available }
     }
-    
     private var showGeneratorError: Binding<Bool> {
-        .init {
-            if case .unavailable = generationState { return true }
-            return false
-        }
+        let state = generationState
+        return .init { state?.isAvailable == false }
     }
     
     var body: some View {
@@ -95,16 +94,16 @@ struct FoodListView: View {
                 .presentationDetents([.large])
             }
         }
-        .alert("Oops", isPresented: showGeneratorError) {
+        .alert("Apple Intelligence", isPresented: showGeneratorError) {
             Button("OK", role: .cancel) {
                 generationState = nil
             }
         } message: {
             if case let .unavailable(error) = generationState {
                 switch error {
-                case .appleIntelligenceNotEnabled: Text("Apple Intelligence is not available. Please check that it is enabled in Settings and try again.")
+                case .appleIntelligenceNotEnabled: Text("Apple Intelligence is not enabled. Please check it is enabled in Settings and try again.")
                 case .deviceNotEligible: Text("This device does not support Apple Intelligence. Please add your ingredient by hand.")
-                case .modelNotReady: Text("Apple Intelligence is not currently available - please try again later. In the mean time you can add your ingredient by hand.")
+                case .modelNotReady: Text("Please try again later. In the mean time you can add your ingredient by hand.")
                 @unknown default:
                     fatalError()
                 }

@@ -17,6 +17,14 @@ enum GeneratorError: Error {
         }
     }
 }
+extension SystemLanguageModel.Availability {
+    var isAvailable: Bool {
+        switch self {
+        case .available: true
+        case .unavailable: false
+        }
+    }
+}
 
 /// Observable view model responsible for generating anything from the local SLM
 @MainActor
