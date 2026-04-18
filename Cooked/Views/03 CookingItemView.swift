@@ -13,36 +13,49 @@ struct CookingItemView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-
+    
     // Callback to pass the created CookingItem back to the caller
     var onSave: (CookingItem) -> Void
-
+    
     @State private var selectedFood: FoodItem?
     
     // Food variable selection/creation
     @Query(sort: \FoodVariable.name) private var variables: [FoodVariable]
     @State private var variableText: String = ""
     @State private var selectedVariable: FoodVariable?
-
+    
     // Time input
     @State private var minutes: String = ""
     @State private var seconds: String = ""
-
+    
     var body: some View {
         Form {
             Section(header: Text("Ingredient")) {
-                NavigationLink {
-                    FoodListView(selectedFood: $selectedFood)
-                } label: {
-                    HStack {
-                        Text("Select")
-                        Spacer()
-                        Text(selectedFood?.name ?? "None")
-                            .foregroundStyle(.secondary)
+                if SystemLanguageModel.default.availability.isSupported {
+                    NavigationLink {
+                        FoodListView(selectedFood: $selectedFood)
+                    } label: {
+                        HStack {
+                            Text("Select")
+                            Spacer()
+                            Text(selectedFood?.name ?? "None")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    NavigationLink {
+                        FoodItemView(selectedFood: $selectedFood)
+                    } label: {
+                        HStack {
+                            Text("Create")
+                            Spacer()
+                            Text(selectedFood?.name ?? "None")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
-
+            
             Section(header: Text("Food Variable (optional)")) {
                 TextField("e.g. 1.7 kg, large", text: $variableText)
                     .onSubmit {
@@ -67,26 +80,26 @@ struct CookingItemView: View {
                     }
                 }
             }
-
+            
             Section(header: Text("Cooking Time")) {
                 HStack {
                     TextField("Minutes", text: $minutes)
-                        #if os(iOS)
+#if os(iOS)
                         .keyboardType(.numberPad)
-                        #endif
+#endif
                         .multilineTextAlignment(.trailing)
                         .frame(maxWidth: 120)
                     Text("min")
                     TextField("Seconds", text: $seconds)
-                        #if os(iOS)
+#if os(iOS)
                         .keyboardType(.numberPad)
-                        #endif
+#endif
                         .multilineTextAlignment(.trailing)
                         .frame(maxWidth: 120)
                     Text("sec")
                 }
             }
-
+            
             Section {
                 Button {
                     save()
@@ -112,7 +125,7 @@ struct CookingItemView: View {
             }
         }
     }
-
+    
     private var suggestedVariables: [FoodVariable] {
         let q = variableText.trimmingCharacters(in: .whitespacesAndNewlines)
         if q.isEmpty {
@@ -122,13 +135,13 @@ struct CookingItemView: View {
             return variables.filter { $0.name.lowercased().contains(lower) }.prefix(12).map { $0 }
         }
     }
-
+    
     private var canSave: Bool {
         guard let _ = selectedFood else { return false }
         let totalSeconds = parsedSeconds()
         return totalSeconds > 0
     }
-
+    
     private func pickOrCreateVariableIfNeeded() {
         let name = variableText.trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty {
@@ -143,19 +156,19 @@ struct CookingItemView: View {
             selectedVariable = new
         }
     }
-
+    
     private func parsedSeconds() -> Int {
         let m = Int(minutes) ?? 0
         let s = Int(seconds) ?? 0
         return max(0, m * 60 + s)
     }
-
+    
     private func save() {
         guard let food = selectedFood else { return }
         pickOrCreateVariableIfNeeded()
         let totalSeconds = parsedSeconds()
         guard totalSeconds > 0 else { return }
-
+        
         let item = CookingItem(food: food, variable: selectedVariable, minutes: Double(totalSeconds) / 60)
         modelContext.insert(item)
         onSave(item)
