@@ -50,9 +50,9 @@ enum DataHelpers {
         // Create test data
         
         guard
-            let proteinGroup = foodGroups.first(where: { $0.kind == .protein }),
-            let stapleGroup = foodGroups.first(where: { $0.kind == .staple }),
-            let vegetableGroup = foodGroups.first(where: { $0.kind == .vegetable }),
+            let proteinGroup = foodGroups.first(where: { $0.group == .protein }),
+            let stapleGroup = foodGroups.first(where: { $0.group == .staple }),
+            let vegetableGroup = foodGroups.first(where: { $0.group == .vegetable }),
             let firstProteinIngredient = proteinGroup.ingredients?.first,
             let firstStapleIngredient = stapleGroup.ingredients?.first,
             let lastStapleIngredient = stapleGroup.ingredients?.last,
@@ -131,6 +131,12 @@ extension ModelContext {
     }
 }
 
+extension FoodGroup {
+    func getIngredientNames() -> [String] {
+        ingredients?.map { $0.name } ?? []
+    }
+}
+
 extension Array<FoodGroup> {
     
     /// Given an array of food groups, get the food names and varieties for each of these.
@@ -141,11 +147,12 @@ extension Array<FoodGroup> {
                 continue
             }
             for ingredient in ingredients {
-                guard let varieties = ingredient.varieties else {
-                    continue
-                }
-                for variety in varieties {
-                    result[ingredient.name, default: []].append(variety.name)
+                if let varieties = ingredient.varieties, !varieties.isEmpty {
+                    for variety in varieties {
+                        result[ingredient.name, default: []].append(variety.name)
+                    }
+                } else {
+                    result[ingredient.name] = []
                 }
             }
         }

@@ -78,8 +78,8 @@ extension ModelContainer {
             schema: schema,
             isStoredInMemoryOnly: false, // stored in SQLite locally
             allowsSave: true,
-            groupContainer: .automatic,
-            cloudKitDatabase: .automatic // connects model with CloudKit
+            groupContainer: .automatic, // for app groups sharing
+            cloudKitDatabase: cloudKitConfig() // connects model with CloudKit
             // no need for local persistent store URL (e.g. when syncing with CoreData)
         )
         guard
@@ -90,5 +90,12 @@ extension ModelContainer {
         }
         return modelContainer
     }()
-    
+}
+
+private func cloudKitConfig() -> ModelConfiguration.CloudKitDatabase {
+    #if DEBUG
+    .none
+    #else
+    .automatic
+    #endif
 }

@@ -8,6 +8,10 @@
 import SwiftUI
 import SwiftData
 
+/// View for editing or create a food item.
+/// This could also be used in case generation does not provide
+/// the desired ingredient with which to create a food item from.
+/// "New Ingredient"
 struct FoodItemView: View {
     
     @Environment(\.modelContext) private var modelContext
@@ -15,7 +19,7 @@ struct FoodItemView: View {
     
     @Binding var selectedFood: FoodItem?
     
-    @State private var selectedGroupKind: FoodGroup.Kind?
+    @State private var selectedGroupKind: FoodGroup.Group?
     @State private var ingredientName: String = ""
     @State private var varietyName: String = ""
     
@@ -23,43 +27,53 @@ struct FoodItemView: View {
         Form {
             Section {
                 Picker("Group", selection: $selectedGroupKind) {
-                    ForEach(FoodGroup.Kind.allCases, id: \.self) { kind in
+                    ForEach(FoodGroup.Group.allCases, id: \.self) { kind in
                         Text(kind.title).tag(kind)
                     }
                 }
                 .pickerStyle(.segmented)
+                .disabled(hasValidIngredient)
                 
                 if selectedGroupKind != nil {
-                    TextField("Ingredient e.g. Potatoes", text: $ingredientName)
+                    TextField("Ingredient e.g. \(exampleIngredient)", text: $ingredientName)
 #if os(iOS)
                         .textInputAutocapitalization(.words)
 #endif
                     if hasValidIngredient {
-                        TextField("Variety (optional) e.g. Piper", text: $varietyName)
+                        TextField("Variety (optional) e.g. \(exampleVariety)", text: $varietyName)
 #if os(iOS)
                             .textInputAutocapitalization(.words)
 #endif
                     }
                 }
             }
-            Section {
-                Button {
-                    save()
-                } label: {
-                    Label("Add Ingredient", systemImage: "plus")
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!hasValidIngredient)
-            }
         }
         .navigationTitle("New Ingredient")
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    saveAndDismiss()
+                } label: {
+                    Image(systemName: "checkmark")
+                }
+                .disabled(!hasValidIngredient)
+                .buttonStyle(.borderedProminent)
+            }
+        }
     }
     
     private var hasValidIngredient: Bool {
         !ingredientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    private func save() {
+    private var exampleIngredient: String {
+        selectedGroupKind?.exampleIngredient ?? "Potatoes"
+    }
+    private var exampleVariety: String {
+        selectedGroupKind?.exampleVariety ?? "Piper Potatoes"
+    }
+    
+    private func saveAndDismiss() {
         
         let trimmedIngredient = ingredientName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !trimmedIngredient.isEmpty else {
@@ -71,10 +85,10 @@ struct FoodItemView: View {
         
         let groups = modelContext.fetchAll(FoodGroup.self)
         let foodGroup: FoodGroup
-        if let group = groups.first(where: { $0.kind == selectedGroupKind }) {
+        if let group = groups.first(where: { $0.group == selectedGroupKind }) {
             foodGroup = group
         } else if let selectedGroupKind {
-            foodGroup = FoodGroup(kind: selectedGroupKind)
+            foodGroup = FoodGroup(selectedGroupKind)
             modelContext.insert(foodGroup)
         } else {
             return
@@ -100,6 +114,8 @@ struct FoodItemView: View {
         if !trimmedVariety.isEmpty {
             // If the user typed just the variety type (e.g. "Piper"),
             // append the ingredient name to form the full variety name (e.g. "Piper Potatoes").
+            // TBD: this doesn't work for every case e.g. "Lamb Chops" (reverse order)
+            // or "Shallots" (variety of "Onions", i.e. not "Shallot Onions")
             let fullVarietyName: String
             if trimmedVariety.contains(trimmedIngredient) {
                 fullVarietyName = trimmedVariety

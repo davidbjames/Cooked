@@ -13,8 +13,16 @@ final class VarietyGenerator: Generator {
     
     let ingredient: Ingredient
     
+    private(set) var hasGenerated: Bool = false
+    
     init(ingredient: Ingredient, modelContext: ModelContext) throws {
         
+        self.ingredient = ingredient
+        try super.init(modelContext: modelContext)
+    }
+    
+    
+    func generateVarieties() async {
         var exclusions: String?
         let existingVarieties = ingredient.varieties?.map { $0.name } ?? []
         if !existingVarieties.isEmpty {
@@ -29,29 +37,30 @@ final class VarietyGenerator: Generator {
             }
             "Food varieties should always include the full name, variety plus food name, e.g. 'russet potatoes'"
             "Food ingredient and variety names must always be lower cased, e.g. 'russet potatoes'."
+            "Food varieties should not be repeated within the session."
             if let exclusions {
                 exclusions
             }
         }
-        self.ingredient = ingredient
-        
-        try super.init(instructions: instructions, tools: [], modelContext: modelContext)
-    }
-    
-    
-    func generateVarieties() async {
-        
+        print(instructions)
+        let session = LanguageModelSession(
+            model: .default,
+            tools: [],
+            instructions: instructions
+        )
         do {
+            hasGenerated = true
             let ingredientName = ingredient.name
             let prompt = Prompt {
-                "Create a list of varieties for the ingredient '\(ingredientName)'"
+                "Create a list of ONLY 3 varieties for the ingredient '\(ingredientName)'"
             }
             let stream = session.streamResponse(
                 to: prompt,
                 generating: [GeneratedVariety].self,
-                includeSchemaInPrompt: true,
-                options: .init(sampling: .greedy)
+                includeSchemaInPrompt: true
+//                options: .init(sampling: .greedy)
             )
+            
             // NOTE: _underscored variables indicate partially generated types
             let varieties = ingredient.varieties ?? []
             for try await partialResponse in stream {
@@ -61,6 +70,8 @@ final class VarietyGenerator: Generator {
                         let varietyName = _variety.name,
                         !varietyName.isEmpty,
                         !varieties.contains(where: { $0.name == varietyName })
+//                         ingredient.varieties?.contains(where: { $0.name == varietyName }) != true
+
                     else {
                         continue
                     }

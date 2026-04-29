@@ -37,8 +37,6 @@ extension SystemLanguageModel.Availability {
 class Generator {
     
     var error: Error?
-    
-    let session: LanguageModelSession
     let modelContext: ModelContext
     
     static var regionName: String = {
@@ -51,16 +49,12 @@ class Generator {
         return regionName
     }()
     
-    init(instructions: Instructions, tools: [any Tool], modelContext: ModelContext) throws {
-        let instructions = Instructions {
-            // "Follow these instructions"
-            instructions
-        }
+    init(modelContext: ModelContext) throws {
         let slm = SystemLanguageModel.default
+        // throw GeneratorError.availability(.deviceNotEligible)
         if case .unavailable(let reason) = slm.availability {
             throw GeneratorError.availability(reason)
         }
-        self.session = .init(model: slm, tools: tools, instructions: instructions)
         self.modelContext = modelContext
         
         print("Region:", Self.regionName)

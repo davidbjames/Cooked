@@ -9,6 +9,9 @@ import SwiftUI
 import SwiftData
 import FoundationModels
 
+/// View for creating or adding a new cooking item
+/// comprised of a food item, a food variable and a cooking time.
+/// "Add Item"
 struct CookingItemView: View {
     
     @Environment(\.modelContext) private var modelContext
@@ -33,7 +36,7 @@ struct CookingItemView: View {
             Section(header: Text("Ingredient")) {
                 if SystemLanguageModel.default.availability.isSupported {
                     NavigationLink {
-                        FoodListView(selectedFood: $selectedFood)
+                        FoodItemListView(selectedFood: $selectedFood)
                     } label: {
                         HStack {
                             Text("Select")
@@ -47,9 +50,9 @@ struct CookingItemView: View {
                         FoodItemView(selectedFood: $selectedFood)
                     } label: {
                         HStack {
-                            Text("Create")
+                            Text("Add")
                             Spacer()
-                            Text(selectedFood?.name ?? "None")
+                            Text(selectedFood?.name ?? "")
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -99,16 +102,6 @@ struct CookingItemView: View {
                     Text("sec")
                 }
             }
-            
-            Section {
-                Button {
-                    save()
-                } label: {
-                    Label("Save", systemImage: "checkmark")
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!canSave)
-            }
         }
         .navigationTitle("Add Item")
         .toolbar {
@@ -116,6 +109,15 @@ struct CookingItemView: View {
                 Button("Cancel") {
                     dismiss()
                 }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    saveAndDismiss()
+                } label: {
+                    Image(systemName: "checkmark")
+                }
+                .disabled(!canSave)
+                .buttonStyle(.borderedProminent)
             }
         }
         .onChange(of: variableText) { _, newValue in
@@ -163,7 +165,7 @@ struct CookingItemView: View {
         return max(0, m * 60 + s)
     }
     
-    private func save() {
+    private func saveAndDismiss() {
         guard let food = selectedFood else { return }
         pickOrCreateVariableIfNeeded()
         let totalSeconds = parsedSeconds()

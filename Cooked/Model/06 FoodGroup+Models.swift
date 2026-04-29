@@ -11,21 +11,14 @@ import FoundationModels
 // MARK: - Generated
 
 @Generable
-struct StandardFoodGroup: Equatable {
+struct GeneratedFoodGroup: Equatable {
     
     @Guide(
-        description: "Food group kind",
-        .anyOf(
-            FoodGroup.Kind.allCases.map(\.rawValue)
-        )
+        description: "Food group",
+        .anyOf(FoodGroup.Group.allCases.map(\.rawValue))
     )
-    let kind: String // < uses string to restrict ^
+    let name: String // < uses string to restrict ^
     
-    @Guide(
-        description: "A list of ingredients which are foods used in cooking",
-        .minimumCount(Constants.generatedIngredientsCount.lowerBound),
-        .maximumCount(Constants.generatedIngredientsCount.upperBound)
-    )
     let ingredients: [GeneratedIngredient]
 }
 
@@ -68,7 +61,7 @@ extension SchemaV1 {
     @Model
     final class FoodGroup {
         
-        var kindKey: String = Kind.staple.rawValue
+        var name: String = Group.staple.rawValue
         
         @Relationship(deleteRule: .cascade, inverse: \Ingredient.foodGroup)
         var ingredients: [Ingredient]?
@@ -76,15 +69,15 @@ extension SchemaV1 {
         @Relationship
         var foodItems: [FoodItem]?
         
-        init(kind: Kind) {
-            self.kindKey = kind.rawValue
+        init(_ name: Group) {
+            self.name = name.rawValue
         }
     }
 }
 
 extension FoodGroup {
     
-    enum Kind: String, Hashable, Codable, CaseIterable {
+    enum Group: String, Hashable, Codable, CaseIterable {
         case staple
         case protein
         case vegetable
@@ -96,11 +89,53 @@ extension FoodGroup {
             case .vegetable: "Vegetables"
             }
         }
+        var exampleIngredient: String {
+            switch self {
+            case .staple: "rice"
+            case .protein: "lamb"
+            case .vegetable: "cabbage"
+            }
+        }
+        var exampleUncookableIngredient: String {
+            switch self {
+            case .staple: "wheat"
+            case .protein: "soybean"
+            case .vegetable: "chickpea"
+            }
+        }
+        var exampleCookableIngredient: String {
+            switch self {
+            case .staple: "flour"
+            case .protein: "tofu"
+            case .vegetable: "chickpea flour"
+            }
+        }
+        var examplePluralizedIngredient: String {
+            switch self {
+            case .staple: "potatoes"
+            case .protein: "beans"
+            case .vegetable: "tomatoes"
+            }
+        }
+        var exampleNonPluralizedIngredient: String {
+            switch self {
+            case .staple: "rice"
+            case .protein: "lamb"
+            case .vegetable: "lettuce"
+            }
+        }
+        var exampleVariety: String {
+            switch self {
+            case .staple: "basmati rice"
+            case .protein: "lamb chops"
+            case .vegetable: "sweetheart cabbage"
+            }
+        }
     }
     
-    var kind: Kind {
-        get { Kind(rawValue: kindKey)! }
-        set { kindKey = newValue.rawValue }
+    var group: Group {
+        get { Group(rawValue: name)! }
+        set { name = newValue.rawValue }
     }
     
     func addIngredient(_ ingredient: Ingredient) {

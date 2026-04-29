@@ -1,5 +1,5 @@
 //
-//  FoodListView.swift
+//  FoodItemListView.swift
 //  Cooked
 //
 //  Created by David James on 18/04/2026.
@@ -9,7 +9,9 @@ import SwiftUI
 import SwiftData
 import FoundationModels
 
-struct FoodListView: View {
+/// List of the user's food items
+/// "Ingredient"
+struct FoodItemListView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -46,6 +48,18 @@ struct FoodListView: View {
     
     var body: some View {
         List {
+            Button {
+                do {
+                    ingredientGenerator = try IngredientGenerator(modelContext: modelContext)
+                    generationState = .available
+                } catch let error as GeneratorError {
+                    generationState = .unavailable(error.reason)
+                } catch {
+                    generationState = .unavailable(.appleIntelligenceNotEnabled)
+                }
+            } label: {
+                Label("New Ingredient", systemImage: "plus")
+            }
             Section {
                 ForEach(foodItems, id: \.persistentModelID) { item in
                     Button {
@@ -62,18 +76,6 @@ struct FoodListView: View {
                         }
                     }
                 }
-            }
-            Button {
-                do {
-                    ingredientGenerator = try IngredientGenerator(modelContext: modelContext)
-                    generationState = .available
-                } catch let error as GeneratorError {
-                    generationState = .unavailable(error.reason)
-                } catch {
-                    generationState = .unavailable(.appleIntelligenceNotEnabled)
-                }
-            } label: {
-                Label("New Ingredient", systemImage: "plus")
             }
         }
         .navigationTitle("Ingredient")
@@ -120,16 +122,3 @@ struct FoodListView: View {
     }
 }
 
-struct IngredientListView: View {
-    
-    @Binding var selectedFood: FoodItem?
-    
-    @State var generator: IngredientGenerator
-    
-    var body: some View {
-        LazyVStack {
-            EmptyView()
-        }
-        .navigationTitle("Ingredients")
-    }
-}

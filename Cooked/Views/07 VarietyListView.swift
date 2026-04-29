@@ -1,0 +1,48 @@
+//
+//  VarietyListView.swift
+//  Cooked
+//
+//  Created by David James on 18/04/2026.
+//
+
+import SwiftUI
+import SwiftData
+
+struct VarietyListView: View {
+    
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
+    @Binding var selectedFood: FoodItem?
+    
+    @State var generator: VarietyGenerator
+    
+    var body: some View {
+        List {
+            Section(header: Text(generator.ingredient.name.capitalized(with: .current))) {
+                ForEach(generator.ingredient.varieties?.sorted() ?? [], id: \.persistentModelID) { variety in
+                    Button {
+                        selectVariety(variety)
+                    } label: {
+                        Text(variety.name.capitalized(with: .current))
+                    }
+                }
+            }
+        }
+        .navigationTitle("Varieties")
+        .task {
+            if !generator.hasGenerated {
+                await generator.generateVarieties()
+            }
+        }
+    }
+    
+    private func selectVariety(_ variety: Variety) {
+        let ingredient = generator.ingredient
+        let group = ingredient.foodGroup!
+        let foodItem = FoodItem(group: group, ingredient: ingredient, variety: variety)
+        modelContext.insert(foodItem)
+        selectedFood = foodItem
+        dismiss()
+    }
+}

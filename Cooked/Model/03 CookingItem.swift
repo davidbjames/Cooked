@@ -14,8 +14,6 @@ extension SchemaV1 {
     ///
     /// This doesn't hold the actual name, that is on `FoodItem`.
     /// Also, the `FoodVariable` is an arbitrary variable.
-    /// Hence, a cooking item may have a food item of "Rice"
-    /// and a food variable of "Basmati".
     @Model
     final class CookingItem: TimedItem {
         

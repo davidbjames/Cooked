@@ -28,6 +28,11 @@ struct CookedApp: App {
     var body: some Scene {
         WindowGroup {
             MealPlanListView()
+                .onAppear {
+                    // Use this to lookup the current default store.
+                    // If connecting with DB GUI don't forget to change any %20 to space.
+                    // print("Database:", URL.applicationSupportDirectory.appending(path: "default.store").path())
+                }
         }
         .modelContainer(ModelContainer.sharedModelContainer)
     }
