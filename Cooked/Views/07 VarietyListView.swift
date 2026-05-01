@@ -15,7 +15,12 @@ struct VarietyListView: View {
     
     @Binding var selectedFood: FoodItem?
     
-    @State var generator: VarietyGenerator
+    @State private var generator: VarietyGenerator
+
+    init(selectedFood: Binding<FoodItem?>, generator: VarietyGenerator) {
+        _selectedFood = selectedFood
+        _generator = State(initialValue: generator)
+    }
     
     var body: some View {
         List {

@@ -13,7 +13,11 @@ struct MealPlanView: View {
     @Environment(\.modelContext) private var modelContext: ModelContext
     @Environment(\.dismiss) private var dismiss: DismissAction
 
-    @State var mealPlan: MealPlan
+    @State private var mealPlan: MealPlan
+
+    init(mealPlan: MealPlan) {
+        _mealPlan = State(initialValue: mealPlan)
+    }
     
     // @State private var selection = Set<PersistentIdentifier>()
     // @State private var isEditing = false

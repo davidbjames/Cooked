@@ -22,7 +22,12 @@ struct IngredientListView: View {
     
     @Binding var selectedFood: FoodItem?
     
-    @State var generator: IngredientGenerator
+    @State private var generator: IngredientGenerator
+
+    init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator) {
+        _selectedFood = selectedFood
+        _generator = State(initialValue: generator)
+    }
     
     @State private var generationState: SystemLanguageModel.Availability?
     @State private var varietyGenerator: VarietyGenerator?

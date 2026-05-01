@@ -91,7 +91,7 @@ struct FoodItemListView: View {
         .sheet(isPresented: showIngredients, onDismiss: { generationState = nil }) {
             if let ingredientGenerator {
                 NavigationStack {
-                    IngredientListView(selectedFood: _selectedFood, generator: ingredientGenerator)
+                    IngredientListView(selectedFood: $selectedFood, generator: ingredientGenerator)
                 }
                 .presentationDetents([.large])
             }
