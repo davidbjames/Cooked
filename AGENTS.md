@@ -1,3 +1,7 @@
+## Project
+
+- Minimum deployment target: iOS 26.0 and macOS 26.0 — no `#available` guards are needed for any iOS 26 or earlier APIs
+
 ## Build System
 
 - Use `BuildProject` to compile, not shell commands
