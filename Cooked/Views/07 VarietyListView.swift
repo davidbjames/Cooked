@@ -44,7 +44,7 @@ struct VarietyListView: View {
     
     private func selectVariety(_ variety: Variety) {
         let ingredient = generator.ingredient
-        let group = ingredient.foodGroup!
+        guard let group = ingredient.foodGroup else { return }
         let foodItem = FoodItem(group: group, ingredient: ingredient, variety: variety)
         modelContext.insert(foodItem)
         selectedFood = foodItem
