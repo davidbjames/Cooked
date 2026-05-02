@@ -23,26 +23,26 @@ final class VarietyGenerator: Generator {
     }
     
     func generateVarieties() async {
+        
         let existingVarieties = ingredient.varieties?.map { $0.name } ?? []
-        var exclusions: String?
-        if !existingVarieties.isEmpty {
-            exclusions = "Exclusion list: \(existingVarieties.joined(separator: ", ")). (DO NOT include any of these under any circumstances, including spelling variations and synonyms.)"
-        }
+        
         let includeInternationalIngredients = Profile.current(in: modelContext).includeInternationalIngredients
+        
         let ingredientName = ingredient.name
         let group = ingredient.foodGroup?.group
 
         let instructions = Instructions {
             "Your job is to build a list of food varieties for '\(ingredientName)'."
-            "Prefer varieties that are common in the current region '\(Self.regionName)'."
+            "Prefer varieties that are common in '\(Self.regionName)'."
             if includeInternationalIngredients {
-                "In addition to preferred varieties, you may include alternative varieties from other parts of the world."
+                "Also include varieties from around the world."
             }
-            "Food varieties should always include the full name, variety plus food name, e.g. 'russet potatoes'."
-            "Food ingredient and variety names must always be lower cased, e.g. 'russet potatoes'."
-            "Food varieties should not be repeated in the list."
-            if let exclusions {
-                exclusions
+            "Varieties should always include the full name, variety plus food name, e.g. 'russet potatoes'."
+            "Variety names must always be lower cased, e.g. 'russet potatoes'."
+            "Varieties MUST not be repeated in the list."
+            // TBD: pluralization comment similar to ingredients 
+            if !existingVarieties.isEmpty {
+                "Exclusion list: \(existingVarieties.joined(separator: ", ")). (DO NOT include any of these under any circumstances, including spelling variations and synonyms.)"
             }
         }
 
