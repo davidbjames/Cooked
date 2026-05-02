@@ -16,6 +16,7 @@ final class IngredientGenerator: Generator {
     
     private(set) var foodGroups: [FoodGroup] = []
     
+    @ObservationIgnored
     private var session: LanguageModelSession!
     
     func generateIngredients() async {
@@ -154,7 +155,7 @@ final class IngredientGenerator: Generator {
                 
                 var lastPrefix: String? = nil
                 var consecutivePrefixCount = 0
-                let maxConsecutivePrefix = 3
+                let maxConsecutivePrefix = 2
                 
                 for line in trimmedLines {
                     guard !line.isEmpty else {

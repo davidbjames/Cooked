@@ -14,6 +14,7 @@ final class VarietyGenerator: Generator {
     
     let ingredient: Ingredient
     
+    @ObservationIgnored
     private var session: LanguageModelSession!
     
     init(ingredient: Ingredient, modelContext: ModelContext) throws {
