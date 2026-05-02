@@ -140,13 +140,15 @@ final class IngredientGenerator: Generator {
                 let trimmedLines = splitLines.map {
                     $0.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: .punctuationCharacters).lowercased()
                 }
-                let parsedLines = Set(trimmedLines)
-                print(parsedLines)
-                print("Responded with:", trimmedLines.count, "items. Used", parsedLines.count)
+                print("Responded with:", trimmedLines.count, "items")
                 
                 // Post-generation audit and ingredient build
                 
-                for line in parsedLines {
+                var lastPrefix: String? = nil
+                var consecutivePrefixCount = 0
+                let maxConsecutivePrefix = 3
+                
+                for line in trimmedLines {
                     guard !line.isEmpty else {
                         continue
                     }
@@ -157,6 +159,18 @@ final class IngredientGenerator: Generator {
                         // Already have this ingredient
                         print("(skipping \(line) - already exists)")
                         continue
+                    }
+                    // Detect degenerate repetition (e.g. "rye crackers", "rye rolls", "rye bread")
+                    let prefix = line.split(separator: " ").first.map(String.init) ?? line
+                    if prefix == lastPrefix {
+                        consecutivePrefixCount += 1
+                        if consecutivePrefixCount >= maxConsecutivePrefix {
+                            print("(stopping - degenerate repetition detected on '\(prefix)')")
+                            break
+                        }
+                    } else {
+                        lastPrefix = prefix
+                        consecutivePrefixCount = 1
                     }
                     let auditSession = LanguageModelSession(
                         model: .init(guardrails: .permissiveContentTransformations),
