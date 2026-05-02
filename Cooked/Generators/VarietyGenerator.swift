@@ -13,8 +13,6 @@ final class VarietyGenerator: Generator {
     
     let ingredient: Ingredient
     
-    private(set) var hasGenerated: Bool = false
-    
     init(ingredient: Ingredient, modelContext: ModelContext) throws {
         
         self.ingredient = ingredient
@@ -49,7 +47,6 @@ final class VarietyGenerator: Generator {
             instructions: instructions
         )
         do {
-            hasGenerated = true
             let ingredientName = ingredient.name
             let prompt = Prompt {
                 "Create a list of ONLY 3 varieties for the ingredient '\(ingredientName)'"

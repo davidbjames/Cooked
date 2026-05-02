@@ -16,8 +16,6 @@ final class IngredientGenerator: Generator {
     
     private(set) var foodGroups: [FoodGroup] = []
     
-    private(set) var hasGenerated: Bool = false
-    
     private var session: LanguageModelSession!
     
     func generateIngredients() async {
@@ -29,7 +27,17 @@ final class IngredientGenerator: Generator {
         
         let includeInternationalIngredients = Profile.current(in: modelContext).includeInternationalIngredients
         
-        foodGroups = modelContext.fetchAll(FoodGroup.self)
+        // De-duplicate any FoodGroup records that may exist from previous incomplete runs.
+        // (#Unique constraints are not available with CloudKit-backed stores.)
+        let allFetched = modelContext.fetchAll(FoodGroup.self)
+        var seen = Set<FoodGroup.Group>()
+        for fg in allFetched {
+            if seen.insert(fg.group).inserted {
+                foodGroups.append(fg)
+            } else {
+                modelContext.delete(fg)
+            }
+        }
         
         for group in FoodGroup.Group.allCases { // .dropFirst(2) for testing one group only
             

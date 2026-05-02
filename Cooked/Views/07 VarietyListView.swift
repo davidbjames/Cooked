@@ -36,9 +36,7 @@ struct VarietyListView: View {
         }
         .navigationTitle("Varieties")
         .task {
-            if !generator.hasGenerated {
-                await generator.generateVarieties()
-            }
+            await generator.generateVarieties()
         }
     }
     
