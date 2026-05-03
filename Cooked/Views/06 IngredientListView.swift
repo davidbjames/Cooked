@@ -9,11 +9,6 @@ import SwiftUI
 import SwiftData
 import FoundationModels
 
-// Bugs:
-// - Ingredients are regenerated when going back from Varieties
-// - FoodItemListView is showing duplicate ingredients
-// - IngredientListView selecting ingredient does nothing
-// - VarietyListView is displaying way too much, including dupes
 
 struct IngredientListView: View {
     

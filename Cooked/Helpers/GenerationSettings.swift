@@ -57,7 +57,7 @@ struct GenerationSettings {
     private var estimatedItemTokenCount: Int {
         switch kind {
         case .ingredients: 5
-        case .varieties: 6 // TBD
+        case .varieties: 7
         }
     }
     /// Maximum tokens
@@ -67,16 +67,26 @@ struct GenerationSettings {
     /// Number of items for a single increment.
     /// This is used to determine number of items generated
     /// but also probability breaks.
+    /// These numbers are based on vegetables being
+    /// the largest food group (~50% of all foods),
+    /// then proteins (~28%), then staples (~22%),
+    /// with lower amount of varieties for each,
+    /// since, in a given region, there are usually
+    /// only a few varieties of each to choose from.
     private var itemIncrement: Int {
         switch kind {
         case .ingredients:
             switch group {
-            case .staple: 5
-            case .protein: 8
+            case .staple: 4
+            case .protein: 6
             case .vegetable: 10
             }
         case .varieties:
-            5 // TBD
+            switch group {
+            case .staple: 2
+            case .protein: 4
+            case .vegetable: 6
+            }
         }
     }
     /// Sample from more and more possible results to increase
