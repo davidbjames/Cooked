@@ -22,7 +22,7 @@ final class VarietyGenerator: Generator {
         try super.init(modelContext: modelContext)
     }
     
-    func generateVarieties() async {
+    func generateVarieties(cancellationToken: CancellationToken = .init()) async {
         
         let existingVarieties = ingredient.varieties?.map { $0.name } ?? []
         
@@ -75,6 +75,10 @@ final class VarietyGenerator: Generator {
 
             print(response.content)
 
+            if cancellationToken.isCancelled {
+                return
+            }
+
             // Parsing
             let splitLines = response.content.split(separator: /\d+\.?|[,\n\-•*]+|\band\b/)
             let trimmedLines = splitLines.map {
@@ -103,11 +107,17 @@ final class VarietyGenerator: Generator {
                     print("(skipping \(line) - not a variety of '\(ingredientName)')")
                     continue
                 }
+                if cancellationToken.isCancelled {
+                    return
+                }
                 let isRegional = try await auditSession.respond(
                     to: "Is '\(line)' a common variety in \(Self.regionName)?",
                     generating: Bool.self
                 )
                 print(line, isRegional.content ? "(regional)" : "(NOT regional)")
+                if cancellationToken.isCancelled {
+                    return
+                }
                 let variety = Variety(name: line, isRegional: isRegional.content)
                 ingredient.addVariety(variety)
             }

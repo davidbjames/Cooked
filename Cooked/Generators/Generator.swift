@@ -82,6 +82,10 @@ class Generator {
         return regionName
     }()
     
+    final class CancellationToken {
+        var isCancelled = false
+    }
+
     init(modelContext: ModelContext) throws {
         let slm = SystemLanguageModel.default
         // throw GeneratorError.availability(.deviceNotEligible)
