@@ -164,22 +164,18 @@ private struct IngredientRow: View {
             .accessibilityAddTraits(.isButton)
 
             if isExpanded {
-                if isGenerating {
-                    // Show spinner while varieties are being generated
-                    HStack {
-                        ProgressView()
-                            .padding(.leading, 16)
-                        Spacer()
-                    }
-                } else if let _varieties = ingredient.varieties, !_varieties.isEmpty {
-                    let varieties = _varieties.sorted()
-                    // Variety chips
+                let varieties = ingredient.varieties?.sorted() ?? []
+                if !varieties.isEmpty || isGenerating {
                     FlowLayout(horizontalSpacing: 6, verticalSpacing: 6)
                         .callAsFunction {
                             ForEach(varieties, id: \.persistentModelID) { variety in
                                 VarietyChip(variety: variety) {
                                     onSelectVariety(variety)
                                 }
+                            }
+                            if isGenerating {
+                                ProgressView()
+                                    .padding(.horizontal, 4)
                             }
                         }
                         .padding(.leading, 16)
