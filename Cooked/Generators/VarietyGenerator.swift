@@ -22,7 +22,8 @@ final class VarietyGenerator: Generator {
         try super.init(modelContext: modelContext)
     }
     
-    func generateVarieties(cancellationToken: CancellationToken = .init()) async {
+    override func generate(cancellationToken: CancellationToken = .init()) async {
+        await super.generate(cancellationToken: cancellationToken)
         
         let existingVarieties = ingredient.varieties?.map { $0.name } ?? []
         

@@ -19,7 +19,8 @@ final class IngredientGenerator: Generator {
     @ObservationIgnored
     private var session: LanguageModelSession!
     
-    func generateIngredients(cancellationToken: CancellationToken = .init()) async {
+    override func generate(cancellationToken: CancellationToken = .init()) async {
+        await super.generate(cancellationToken: cancellationToken)
         
         let tools = [any Tool]()
         

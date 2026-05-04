@@ -43,7 +43,7 @@ enum DataHelpers {
     @MainActor
     static func seedMockData(context: ModelContext, deferSave: Bool = false) async throws {
         
-        try await IngredientGenerator(modelContext: context).generateIngredients()
+        try await IngredientGenerator(modelContext: context).generate()
         
         let foodGroups = try context.fetch(FetchDescriptor<FoodGroup>())
 

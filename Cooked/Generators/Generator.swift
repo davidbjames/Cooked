@@ -86,6 +86,10 @@ class Generator {
         var isCancelled = false
     }
 
+    func generate(cancellationToken: CancellationToken = .init()) async {
+        // Base implementation — subclasses override and call super
+    }
+
     init(modelContext: ModelContext) throws {
         let slm = SystemLanguageModel.default
         // throw GeneratorError.availability(.deviceNotEligible)

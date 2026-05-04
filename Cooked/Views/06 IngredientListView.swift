@@ -46,7 +46,7 @@ struct IngredientListView: View {
         }
         .navigationTitle("Ingredients")
         .task {
-            await generator.generateIngredients()
+            await generator.generate()
         }
         .alert("Apple Intelligence", isPresented: .init(
             get: { generatorError?.isAvailable == false },
@@ -88,7 +88,7 @@ struct IngredientListView: View {
                             modelContext: modelContext
                         )
                         generatingVarieties.insert(id)
-                        await varietyGenerator.generateVarieties()
+                        await varietyGenerator.generate()
                         generatingVarieties.remove(id)
                     } catch let error as GeneratorError {
                         generatingVarieties.remove(id)
@@ -166,19 +166,18 @@ private struct IngredientRow: View {
             if isExpanded {
                 let varieties = ingredient.varieties?.sorted() ?? []
                 if !varieties.isEmpty || isGenerating {
-                    FlowLayout(horizontalSpacing: 6, verticalSpacing: 6)
-                        .callAsFunction {
-                            ForEach(varieties, id: \.persistentModelID) { variety in
-                                VarietyChip(variety: variety) {
-                                    onSelectVariety(variety)
-                                }
-                            }
-                            if isGenerating {
-                                ProgressView()
-                                    .padding(.horizontal, 4)
+                    FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
+                        ForEach(varieties, id: \.persistentModelID) { variety in
+                            VarietyChip(variety: variety) {
+                                onSelectVariety(variety)
                             }
                         }
-                        .padding(.leading, 16)
+                        if isGenerating {
+                            ProgressView()
+                                .padding(.horizontal, 4)
+                        }
+                    }
+                    .padding(.leading, 16)
                 }
             }
         }
