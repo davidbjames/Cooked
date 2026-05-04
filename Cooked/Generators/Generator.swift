@@ -32,11 +32,44 @@ extension SystemLanguageModel.Availability {
     }
 }
 
+extension LanguageModelSession {
+    func handleGenerationError(_ error: GenerationError) {
+        print("GENERATION ERROR", error)
+        switch error {
+        case .rateLimited(let context):
+            print(context)
+        case .exceededContextWindowSize(let context):
+            print(context)
+        case .assetsUnavailable(let context):
+            print(context)
+        case .guardrailViolation(let context):
+            print(context)
+            FeedbackLogger.log(session: self, sentiment: .negative, issues: [.init(category: .triggeredGuardrailUnexpectedly, explanation: "Lists of food ingredients and varieties, individually one or two words are triggering guardrail violations based on single words without any context like 'black' or 'blonde' or 'goose' or 'turkey' e.g. in reference to food descriptions.")], desiredOutput: .response(.init(assetIDs: [], segments: [.text(.init(content: ""))])))
+            print(FeedbackLogger.feedbackFileURL)
+        case .unsupportedGuide(let context):
+            print(context)
+        case .unsupportedLanguageOrLocale(let context):
+            print(context)
+        case .decodingFailure(let context):
+            print(context)
+        case .concurrentRequests(let context):
+            print(context)
+        case .refusal(let refusal, let context):
+            print(refusal)
+            print(context)
+        @unknown default:
+            fatalError()
+        }
+        print("------ TRANSCRIPT ------")
+        print(transcript)
+        print("------------------------")
+    }
+}
+
 /// Observable view model responsible for generating anything from the local SLM
 @MainActor
 class Generator {
     
-    var error: Error?
     let modelContext: ModelContext
     
     static var regionName: String = {

@@ -113,21 +113,8 @@ final class VarietyGenerator: Generator {
             }
 
         } catch let error as LanguageModelSession.GenerationError {
-            self.error = error
-            print("GENERATION ERROR", error)
-            switch error {
-            case .rateLimited(let context):
-                print(context)
-            default:
-                break
-            }
-            if let session {
-                print("------ TRANSCRIPT ------")
-                print(session.transcript)
-                print("------------------------")
-            }
+            session.handleGenerationError(error)
         } catch {
-            self.error = error
             print("OTHER ERROR", error)
         }
     }

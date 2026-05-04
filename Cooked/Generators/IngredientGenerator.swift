@@ -208,12 +208,6 @@ final class IngredientGenerator: Generator {
                     
                     let ingredient = Ingredient(name: line, isRegional: isRegional.content)
                     foodGroup.addIngredient(ingredient)
-                    
-                    let varietyGenerator = try VarietyGenerator(
-                        ingredient: ingredient,
-                        modelContext: modelContext
-                    )
-                    await varietyGenerator.generateVarieties()
                 }
                 
                 // CHECK: this appeared to mitigate some errors when running each of these session/generations
@@ -224,24 +218,9 @@ final class IngredientGenerator: Generator {
 //                print("------------------------")
                 
             } catch let error as LanguageModelSession.GenerationError {
-                self.error = error
-                print("GENERATION ERROR", error)
                 // TODO: handle generation errors gracefully
-                switch error {
-                case .rateLimited(let context):
-                    // try again later
-                    print(context)
-                    break
-                default:
-                    break
-                }
-                if let session {
-                    print("------ TRANSCRIPT ------")
-                    print(session.transcript)
-                    print("------------------------")
-                }
+                session.handleGenerationError(error)
             } catch {
-                self.error = error
                 print("OTHER ERROR", error)
             }
         }
