@@ -208,6 +208,12 @@ final class IngredientGenerator: Generator {
                     
                     let ingredient = Ingredient(name: line, isRegional: isRegional.content)
                     foodGroup.addIngredient(ingredient)
+                    
+                    let varietyGenerator = try VarietyGenerator(
+                        ingredient: ingredient,
+                        modelContext: modelContext
+                    )
+                    await varietyGenerator.generateVarieties()
                 }
                 
                 // CHECK: this appeared to mitigate some errors when running each of these session/generations
