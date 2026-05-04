@@ -36,7 +36,13 @@ struct VarietyListView: View {
         }
         .navigationTitle("Varieties")
         .task {
-            await generator.generate()
+            do {
+                try await generator.generate()
+            } catch is GeneratorError {
+                // cancelled or unavailable — ignore
+            } catch {
+                // ignore
+            }
         }
     }
     

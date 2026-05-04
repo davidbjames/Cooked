@@ -19,8 +19,8 @@ final class IngredientGenerator: Generator {
     @ObservationIgnored
     private var session: LanguageModelSession!
     
-    override func generate(cancellationToken: CancellationToken = .init()) async {
-        await super.generate(cancellationToken: cancellationToken)
+    override func generate(cancellationToken: CancellationToken = .init()) async throws {
+        try await super.generate(cancellationToken: cancellationToken)
         
         let tools = [any Tool]()
         
@@ -44,7 +44,7 @@ final class IngredientGenerator: Generator {
         for group in FoodGroup.Group.allCases { // .dropFirst(2) for testing one group only
             
             if cancellationToken.isCancelled {
-                return
+                throw GeneratorError.cancelled
             }
             
             // LEARNING: Prevent context window limits by using new sessions.
@@ -145,7 +145,7 @@ final class IngredientGenerator: Generator {
                 print(response.content)
                 
                 if cancellationToken.isCancelled {
-                    return
+                    throw GeneratorError.cancelled
                 }
                 
                 if #available(iOS 26.4, macOS 26.4, *) {
@@ -154,7 +154,7 @@ final class IngredientGenerator: Generator {
                 }
                 
                 if cancellationToken.isCancelled {
-                    return
+                    throw GeneratorError.cancelled
                 }
                 
                 // Parsing
@@ -214,7 +214,7 @@ final class IngredientGenerator: Generator {
                         continue
                     }
                     if cancellationToken.isCancelled {
-                        return
+                        throw GeneratorError.cancelled
                     }
                     let isRegional = try await auditSession.respond(
                         to: "Is '\(line)' a common food in \(Self.regionName)?",
@@ -223,7 +223,7 @@ final class IngredientGenerator: Generator {
                     print(line, isRegional.content ? "(regional)" : "(NOT regional)")
                     
                     if cancellationToken.isCancelled {
-                        return
+                        throw GeneratorError.cancelled
                     }
                     let ingredient = Ingredient(name: line, isRegional: isRegional.content)
                     foodGroup.addIngredient(ingredient)
@@ -239,6 +239,8 @@ final class IngredientGenerator: Generator {
             } catch let error as LanguageModelSession.GenerationError {
                 // TODO: handle generation errors gracefully
                 session.handleGenerationError(error)
+            } catch let error as GeneratorError {
+                throw error
             } catch {
                 print("OTHER ERROR", error)
             }

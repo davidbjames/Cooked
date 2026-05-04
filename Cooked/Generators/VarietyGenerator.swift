@@ -22,8 +22,8 @@ final class VarietyGenerator: Generator {
         try super.init(modelContext: modelContext)
     }
     
-    override func generate(cancellationToken: CancellationToken = .init()) async {
-        await super.generate(cancellationToken: cancellationToken)
+    override func generate(cancellationToken: CancellationToken = .init()) async throws {
+        try await super.generate(cancellationToken: cancellationToken)
         
         let existingVarieties = ingredient.varieties?.map { $0.name } ?? []
         
@@ -77,7 +77,7 @@ final class VarietyGenerator: Generator {
             print(response.content)
 
             if cancellationToken.isCancelled {
-                return
+                throw GeneratorError.cancelled
             }
 
             // Parsing
@@ -109,7 +109,7 @@ final class VarietyGenerator: Generator {
                     continue
                 }
                 if cancellationToken.isCancelled {
-                    return
+                    throw GeneratorError.cancelled
                 }
                 let isRegional = try await auditSession.respond(
                     to: "Is '\(line)' a common variety in \(Self.regionName)?",
@@ -117,7 +117,7 @@ final class VarietyGenerator: Generator {
                 )
                 print(line, isRegional.content ? "(regional)" : "(NOT regional)")
                 if cancellationToken.isCancelled {
-                    return
+                    throw GeneratorError.cancelled
                 }
                 let variety = Variety(name: line, isRegional: isRegional.content)
                 ingredient.addVariety(variety)
@@ -125,6 +125,8 @@ final class VarietyGenerator: Generator {
 
         } catch let error as LanguageModelSession.GenerationError {
             session.handleGenerationError(error)
+        } catch let error as GeneratorError {
+            throw error
         } catch {
             print("OTHER ERROR", error)
         }

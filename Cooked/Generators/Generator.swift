@@ -11,9 +11,11 @@ import SwiftData
 
 enum GeneratorError: Error {
     case availability(SystemLanguageModel.Availability.UnavailableReason)
+    case cancelled
     var reason: SystemLanguageModel.Availability.UnavailableReason {
         switch self {
         case .availability(let reason): reason
+        case .cancelled: fatalError("No availability reason for .cancelled")
         }
     }
 }
@@ -86,7 +88,7 @@ class Generator {
         var isCancelled = false
     }
 
-    func generate(cancellationToken: CancellationToken = .init()) async {
+    func generate(cancellationToken: CancellationToken = .init()) async throws {
         // Base implementation — subclasses override and call super
     }
 

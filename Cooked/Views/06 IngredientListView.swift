@@ -46,7 +46,13 @@ struct IngredientListView: View {
         }
         .navigationTitle("Ingredients")
         .task {
-            await generator.generate()
+            do {
+                try await generator.generate()
+            } catch is GeneratorError {
+                // cancelled or unavailable — ignore
+            } catch {
+                // ignore
+            }
         }
         .alert("Apple Intelligence", isPresented: .init(
             get: { generatorError?.isAvailable == false },
@@ -88,7 +94,9 @@ struct IngredientListView: View {
                             modelContext: modelContext
                         )
                         generatingVarieties.insert(id)
-                        await varietyGenerator.generate()
+                        try await varietyGenerator.generate()
+                        generatingVarieties.remove(id)
+                    } catch GeneratorError.cancelled {
                         generatingVarieties.remove(id)
                     } catch let error as GeneratorError {
                         generatingVarieties.remove(id)
