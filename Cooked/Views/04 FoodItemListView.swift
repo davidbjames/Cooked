@@ -38,9 +38,10 @@ struct FoodItemListView: View {
     @State private var expandedIngredients: Set<PersistentIdentifier> = []
     
     private var showIngredients: Binding<Bool> {
-        let state = generationState
-        // (local capture ^^ because Binding closure vv is nonisolated but we are in main right now)
-        return .init { state == .available }
+        .init(
+            get: { [generationState] in generationState == .available },
+            set: { [self] newValue in if !newValue { generationState = nil } }
+        )
     }
     private var showGeneratorError: Binding<Bool> {
         let state = generationState
