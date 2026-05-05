@@ -34,7 +34,18 @@ struct IngredientListView: View {
     var body: some View {
         List {
             ForEach(generator.foodGroups, id: \.persistentModelID) { foodGroup in
-                Section(header: Text(foodGroup.group.title)) {
+                Section(header:
+                    HStack {
+                        Text(foodGroup.group.title)
+                        if generator.generatingGroup == foodGroup.group {
+                            Spacer()
+                            ProgressView()
+                            Text("Generating")
+                                .fontWeight(.regular)
+                                .opacity(0.5)
+                        }
+                    }
+                ) {
                     ForEach(foodGroup.ingredients?.sorted() ?? [], id: \.persistentModelID) { ingredient in
                         IngredientRow(
                             ingredient: ingredient,

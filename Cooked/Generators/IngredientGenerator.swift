@@ -15,6 +15,7 @@ import SwiftData
 final class IngredientGenerator: Generator {
     
     private(set) var foodGroups: [FoodGroup] = []
+    private(set) var generatingGroup: FoodGroup.Group? = nil
     
     @ObservationIgnored
     private var session: LanguageModelSession!
@@ -66,6 +67,7 @@ final class IngredientGenerator: Generator {
             let existingIngredients: [String] = foodGroup.getIngredientNames()
             let existingIngredientsString = existingIngredients.joined(separator: ", ")
             
+            generatingGroup = group
             print("------------------------------")
             
             let instructions = Instructions {
@@ -249,10 +251,12 @@ final class IngredientGenerator: Generator {
                 // TODO: handle generation errors gracefully
                 session.handleGenerationError(error)
             } catch let error as GeneratorError {
+                generatingGroup = nil
                 throw error
             } catch {
                 print("OTHER ERROR", error)
             }
         }
+        generatingGroup = nil
     }
 }
