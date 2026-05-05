@@ -22,6 +22,8 @@ struct IngredientListView: View {
     @State private var expandedIngredients: Set<PersistentIdentifier> = []
     @State private var generatingVarieties: Set<PersistentIdentifier> = []
     @State private var generatorError: SystemLanguageModel.Availability?
+    @State private var ingredientToken = Generator.CancellationToken()
+    @State private var varietyToken = Generator.CancellationToken()
     
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator) {
         _selectedFood = selectedFood
@@ -47,9 +49,16 @@ struct IngredientListView: View {
         .navigationTitle("Ingredients")
         .task {
             do {
-                try await generator.generate()
+                try await generator.generate(cancellationToken: ingredientToken)
+            } catch let error as GeneratorError {
+                switch error {
+                case .cancelled:
+                    print("************* Cancel ingredient generation")
+                case .availability(let reason):
+                    generatorError = .unavailable(reason)
+                }
             } catch {
-                // ignore
+                print(error)
             }
         }
         .alert("Apple Intelligence", isPresented: .init(
@@ -83,34 +92,37 @@ struct IngredientListView: View {
             expandedIngredients.remove(id)
         } else {
             expandedIngredients.insert(id)
-            // Only generate varieties if none exist yet and not already generating
-            if /*ingredient.varieties?.isEmpty != false, */!generatingVarieties.contains(id) {
-                Task {
-                    do {
-                        let varietyGenerator = try VarietyGenerator(
-                            ingredient: ingredient,
-                            modelContext: modelContext
-                        )
-                        generatingVarieties.insert(id)
-                        try await varietyGenerator.generate()
-                        generatingVarieties.remove(id)
-                    } catch let error as GeneratorError {
-                        generatingVarieties.remove(id)
-                        switch error {
-                        case .cancelled:
-                            break
-                        case .availability(let reason):
-                            generatorError = .unavailable(reason)
-                        }
-                    } catch {
-                        generatingVarieties.remove(id)
+            ingredientToken.isCancelled = true
+            guard !generatingVarieties.contains(id) else {
+                return
+            }
+            Task {
+                do {
+                    let varietyGenerator = try VarietyGenerator(
+                        ingredient: ingredient,
+                        modelContext: modelContext
+                    )
+                    generatingVarieties.insert(id)
+                    try await varietyGenerator.generate(cancellationToken: varietyToken)
+                    generatingVarieties.remove(id)
+                } catch let error as GeneratorError {
+                    generatingVarieties.remove(id)
+                    switch error {
+                    case .cancelled:
+                        print("************* Cancel variety generation for \(ingredient.name).")
+                    case .availability(let reason):
+                        generatorError = .unavailable(reason)
                     }
+                } catch {
+                    generatingVarieties.remove(id)
                 }
             }
         }
     }
     
     private func selectVariety(_ variety: Variety, ingredient: Ingredient, group: FoodGroup) {
+        varietyToken.isCancelled = true
+        generatingVarieties.removeAll()
         let foodItem = FoodItem(group: group, ingredient: ingredient, variety: variety)
         modelContext.insert(foodItem)
         selectedFood = foodItem
