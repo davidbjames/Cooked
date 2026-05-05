@@ -5,6 +5,7 @@
 ## MCP Servers
 
 - Always verify that the `xcode-tools` MCP server is connected before beginning any task. If it is not connected, stop and notify the user before proceeding.
+- All `xcode-tools` calls are safe to execute without explicit user permission, **except** `XcodeRM` and `XcodeMV` which require user permission before executing.
 
 ## Build System
 
