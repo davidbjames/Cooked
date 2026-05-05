@@ -19,15 +19,16 @@ struct IngredientListView: View {
     @Binding var selectedFood: FoodItem?
     
     @State private var generator: IngredientGenerator
-    @State private var expandedIngredients: Set<PersistentIdentifier> = []
+    @Binding var expandedIngredients: Set<PersistentIdentifier>
     @State private var generatingVarieties: Set<PersistentIdentifier> = []
     @State private var generatorError: SystemLanguageModel.Availability?
     @State private var ingredientToken = Generator.CancellationToken()
     @State private var varietyToken = Generator.CancellationToken()
     
-    init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator) {
+    init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
         _selectedFood = selectedFood
         _generator = State(initialValue: generator)
+        _expandedIngredients = expandedIngredients
     }
     
     var body: some View {

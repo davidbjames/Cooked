@@ -227,6 +227,15 @@ final class IngredientGenerator: Generator {
                     }
                     let ingredient = Ingredient(name: line, isRegional: isRegional.content)
                     foodGroup.addIngredient(ingredient)
+                    
+                    // Save immediately so this Ingredient gets a permanent PersistentIdentifier.
+                    // There was a problem in IngredientListView which uses these identifiers
+                    // to manage expand/collapse state. Without getting the permanent id upfront
+                    // (as we're doing here) the state was broken due to having temporary
+                    // identifiers up until the point that SwiftData does the implicit save
+                    // and assigns permanent ones. Being different ids, it was causing
+                    // a view re-render.
+                    try? modelContext.save()
                 }
                 
                 // CHECK: this appeared to mitigate some errors when running each of these session/generations
