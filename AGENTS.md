@@ -2,6 +2,10 @@
 
 - Minimum deployment target: iOS 26.0 and macOS 26.0 — no `#available` guards are needed for any iOS 26 or earlier APIs
 
+## Coding Style
+
+- Prefer putting code blocks on separate lines, including `if`, `guard`, and others — even for one-liners.
+
 ## MCP Servers
 
 - Always verify that the `xcode-tools` MCP server is connected before beginning any task. If it is not connected, stop and notify the user before proceeding.
