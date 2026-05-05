@@ -2,6 +2,10 @@
 
 - Minimum deployment target: iOS 26.0 and macOS 26.0 — no `#available` guards are needed for any iOS 26 or earlier APIs
 
+## MCP Servers
+
+- Always verify that the `xcode-tools` MCP server is connected before beginning any task. If it is not connected, stop and notify the user before proceeding.
+
 ## Build System
 
 - Use `BuildProject` to compile, not shell commands
