@@ -48,8 +48,6 @@ struct IngredientListView: View {
         .task {
             do {
                 try await generator.generate()
-            } catch is GeneratorError {
-                // cancelled or unavailable — ignore
             } catch {
                 // ignore
             }
@@ -96,14 +94,16 @@ struct IngredientListView: View {
                         generatingVarieties.insert(id)
                         try await varietyGenerator.generate()
                         generatingVarieties.remove(id)
-                    } catch GeneratorError.cancelled {
-                        generatingVarieties.remove(id)
                     } catch let error as GeneratorError {
                         generatingVarieties.remove(id)
-                        generatorError = .unavailable(error.reason)
+                        switch error {
+                        case .cancelled:
+                            break
+                        case .availability(let reason):
+                            generatorError = .unavailable(reason)
+                        }
                     } catch {
                         generatingVarieties.remove(id)
-                        generatorError = .unavailable(.appleIntelligenceNotEnabled)
                     }
                 }
             }
