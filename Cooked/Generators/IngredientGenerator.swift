@@ -32,14 +32,24 @@ final class IngredientGenerator: Generator {
         
         // De-duplicate any FoodGroup records that may exist from previous incomplete runs.
         // (#Unique constraints are not available with CloudKit-backed stores.)
-        let allFetched = modelContext.fetchAll(FoodGroup.self)
+        let allFetchedGroups = modelContext.fetchAll(FoodGroup.self)
         var seen = Set<FoodGroup.Group>()
-        for fg in allFetched {
-            if seen.insert(fg.group).inserted {
-                foodGroups.append(fg)
+        for foodGroup in allFetchedGroups {
+            if seen.insert(foodGroup.group).inserted {
+                foodGroups.append(foodGroup)
             } else {
-                modelContext.delete(fg)
+                modelContext.delete(foodGroup)
             }
+        }
+        
+        // Sort to canonical allCases order after the DB fetch, which returns records in
+        // arbitrary order. The generation loop below appends new groups in allCases order
+        // already, so this one-time sort is sufficient.
+        let allCases = FoodGroup.Group.allCases
+        foodGroups.sort {
+            let lhsIndex = allCases.firstIndex(of: $0.group) ?? Int.max
+            let rhsIndex = allCases.firstIndex(of: $1.group) ?? Int.max
+            return lhsIndex < rhsIndex
         }
         
         for group in FoodGroup.Group.allCases { // .dropFirst(2) for testing one group only
