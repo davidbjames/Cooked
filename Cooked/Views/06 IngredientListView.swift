@@ -196,7 +196,9 @@ private struct IngredientRow: View {
             .accessibilityAddTraits(.isButton)
 
             if isExpanded {
-                let varieties = ingredient.varieties?.sorted() ?? []
+                // Unlike ingredients, varieties are not sorted so the
+                // generating items remain stable for selection.
+                let varieties = ingredient.varieties ?? []
                 if !varieties.isEmpty || isGenerating {
                     FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
                         ForEach(varieties, id: \.persistentModelID) { variety in
