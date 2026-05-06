@@ -23,6 +23,10 @@ final class IngredientGenerator: Generator {
         
         try await super.generate()
         
+        defer {
+            generatingGroup = nil
+        }
+        
         // TODO: Create Profile settings view that can set this
         // Profile.current(in: modelContext).includeInternationalIngredients = true
         
@@ -123,7 +127,6 @@ final class IngredientGenerator: Generator {
                 }
             )
         }
-        generatingGroup = nil
     }
     
     override func makeDegenerateDetector() -> any DegenerateDetector {
