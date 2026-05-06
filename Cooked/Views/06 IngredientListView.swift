@@ -22,13 +22,14 @@ struct IngredientListView: View {
     @Binding var expandedIngredients: Set<PersistentIdentifier>
     @State private var generatingVarieties: Set<PersistentIdentifier> = []
     @State private var generatorError: SystemLanguageModel.Availability?
-    @State private var ingredientToken = Generator.CancellationToken()
-    @State private var varietyToken = Generator.CancellationToken()
+    @State private var ingredientGenerationToken: Generator.GenerationToken
+    @State private var varietyGenerationToken: Generator.GenerationToken?
     
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
         _selectedFood = selectedFood
         _generator = State(initialValue: generator)
         _expandedIngredients = expandedIngredients
+        _ingredientGenerationToken = State(initialValue: generator.token)
     }
     
     var body: some View {
@@ -61,7 +62,7 @@ struct IngredientListView: View {
         .navigationTitle("Ingredients")
         .task {
             do {
-                try await generator.generate(cancellationToken: ingredientToken)
+                try await generator.generate()
             } catch let error as GeneratorError {
                 switch error {
                 case .cancelled:
@@ -104,18 +105,22 @@ struct IngredientListView: View {
             expandedIngredients.remove(id)
         } else {
             expandedIngredients.insert(id)
-            ingredientToken.isCancelled = true
+            ingredientGenerationToken.isCancelled = true
             guard !generatingVarieties.contains(id) else {
                 return
             }
             Task {
                 do {
+                    if varietyGenerationToken == nil {
+                        varietyGenerationToken = .init()
+                    }
                     let varietyGenerator = try VarietyGenerator(
                         ingredient: ingredient,
-                        modelContext: modelContext
+                        modelContext: modelContext,
+                        token: varietyGenerationToken!
                     )
                     generatingVarieties.insert(id)
-                    try await varietyGenerator.generate(cancellationToken: varietyToken)
+                    try await varietyGenerator.generate()
                     generatingVarieties.remove(id)
                 } catch let error as GeneratorError {
                     generatingVarieties.remove(id)
@@ -133,7 +138,11 @@ struct IngredientListView: View {
     }
     
     private func selectVariety(_ variety: Variety, ingredient: Ingredient, group: FoodGroup) {
-        varietyToken.isCancelled = true
+        guard let varietyGenerationToken else {
+            print("**** Variety generation cancellation token does not exist on variety selection")
+            return
+        }
+        varietyGenerationToken.isCancelled = true
         generatingVarieties.removeAll()
         let foodItem = FoodItem(group: group, ingredient: ingredient, variety: variety)
         modelContext.insert(foodItem)

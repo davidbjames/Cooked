@@ -130,32 +130,3 @@ extension ModelContext {
         return try? fetch(descriptor).first
     }
 }
-
-extension FoodGroup {
-    func getIngredientNames() -> [String] {
-        ingredients?.map { $0.name } ?? []
-    }
-}
-
-extension Array<FoodGroup> {
-    
-    /// Given an array of food groups, get the food names and varieties for each of these.
-    func getFoodNames() -> [String: [String]] {
-        var result: [String: [String]] = [:]
-        for foodGroup in self {
-            guard let ingredients = foodGroup.ingredients else {
-                continue
-            }
-            for ingredient in ingredients {
-                if let varieties = ingredient.varieties, !varieties.isEmpty {
-                    for variety in varieties {
-                        result[ingredient.name, default: []].append(variety.name)
-                    }
-                } else {
-                    result[ingredient.name] = []
-                }
-            }
-        }
-        return result
-    }
-}

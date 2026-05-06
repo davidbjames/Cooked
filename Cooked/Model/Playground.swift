@@ -29,14 +29,14 @@ import Playgrounds
         // Try downloading again
         print("The model is not ready yet. Please try again later.")
         
-    case .unavailable(let other):
+    case .unavailable:
         print("The model is unavailable for an unknown reason.")
     }
 //    let instructions = "A food type is a combination of a general type and a specific type which is usually an adjective (e.g. 'basmati rice' is the specialized and general type in one phrase)."
     let session = LanguageModelSession()
     let prompt = "Create a list of 5 food types"
     do {
-        let response = try await session.respond(to: prompt, generating: [GeneratedIngredient].self)
+        _ = try await session.respond(to: prompt, generating: [GeneratedIngredient].self)
     } catch {
         print(error) 
     }

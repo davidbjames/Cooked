@@ -14,24 +14,21 @@ final class VarietyGenerator: Generator {
     
     let ingredient: Ingredient
     
-    @ObservationIgnored
-    private var session: LanguageModelSession!
-    
-    init(ingredient: Ingredient, modelContext: ModelContext) throws {
+    init(ingredient: Ingredient, modelContext: ModelContext, token: GenerationToken = .init()) throws {
         self.ingredient = ingredient
-        try super.init(modelContext: modelContext)
+        try super.init(modelContext: modelContext, token: token)
     }
     
-    override func generate(cancellationToken: CancellationToken = .init()) async throws {
-        try await super.generate(cancellationToken: cancellationToken)
+    override func generate() async throws(GeneratorError) {
         
-        let existingVarieties = ingredient.varieties?.map { $0.name } ?? []
+        try await super.generate()
         
         let includeInternationalIngredients = Profile.current(in: modelContext).includeInternationalIngredients
         
         let ingredientName = ingredient.name
-        let group = ingredient.foodGroup?.group
 
+        let existingVarieties = ingredient.varieties?.map { $0.name } ?? []
+        
         let instructions = Instructions {
             "Your job is to build a list of food varieties for '\(ingredientName)'."
             "Prefer varieties that are common in '\(Self.regionName)'."
@@ -41,105 +38,20 @@ final class VarietyGenerator: Generator {
             "Varieties should always include the full name, variety plus food name, e.g. 'russet potatoes'."
             "Variety names must always be lower cased, e.g. 'russet potatoes'."
             "Varieties MUST not be repeated in the list."
-            // TBD: pluralization comment similar to ingredients 
+            // TBD: pluralization comment similar to ingredients
             if !existingVarieties.isEmpty {
                 "Exclusion list: \(existingVarieties.joined(separator: ", ")). (DO NOT include any of these under any circumstances, including spelling variations and synonyms.)"
             }
         }
-
-        session = LanguageModelSession(
-            model: .init(guardrails: .permissiveContentTransformations),
-            tools: [],
-            instructions: instructions
-        )
-
-        let settings = GenerationSettings(
-            group: group ?? .vegetable,
-            kind: .varieties,
-            existingCount: existingVarieties.count
-        )
-        print(settings)
-
-        let numVarieties = settings.numberOfItems
-
-        let prompt = Prompt {
-            "Create a comma-delimited list of \(numVarieties) varieties for '\(ingredientName)'. Include the list only. No repeats."
-        }
-
-        do {
-            let response = try await session.respond(
-                to: prompt,
-                generating: String.self,
-                includeSchemaInPrompt: false,
-                options: settings.generationOptions
-            )
-
-            print(response.content)
-
-            if cancellationToken.isCancelled {
-                throw GeneratorError.cancelled
-            }
-
-            // Parsing
-            let splitLines = response.content.split(separator: /\d+\.?|[,\n\-•*]+|\band\b/)
-            let trimmedLines = splitLines.map {
-                $0.trimmingCharacters(in: .whitespacesAndNewlines)
-                  .trimmingCharacters(in: .punctuationCharacters)
-                  .lowercased()
-            }
-            print("Responded with:", trimmedLines.count, "items")
-
-            // Post-generation audit and variety build
-            for line in trimmedLines {
-                guard !line.isEmpty else { continue }
-                guard ingredient.varieties?.contains(where: { $0.name == line }) != true else {
-                    print("(skipping \(line) - already exists)")
-                    continue
-                }
-                let auditSession = LanguageModelSession(
-                    model: .init(guardrails: .permissiveContentTransformations),
-                    instructions: .init {
-                        "Your job is to answer questions about food."
-                        "A sentance-like phrase is never a type of food. For example: 'a kind of food' or 'a list of food varieties for potatoes' are not types of food."
-                    }
-                )
-                do {
-                    let isVariety = try await auditSession.respond(
-                        to: "Is '\(line)' a variety of '\(ingredientName)'?",
-                        generating: Bool.self
-                    )
-                    guard isVariety.content else {
-                        print("(skipping \(line) - not a variety of '\(ingredientName)')")
-                        continue
-                    }
-                    if cancellationToken.isCancelled {
-                        throw GeneratorError.cancelled
-                    }
-                    let isRegional = try await auditSession.respond(
-                        to: "Is '\(line)' a common variety in \(Self.regionName)?",
-                        generating: Bool.self
-                    )
-                    print(line, isRegional.content ? "(regional)" : "(NOT regional)")
-                    if cancellationToken.isCancelled {
-                        throw GeneratorError.cancelled
-                    }
-                    let variety = Variety(name: line, isRegional: isRegional.content)
-                    ingredient.addVariety(variety)
-                } catch let error as LanguageModelSession.GenerationError {
-                    session.handleGenerationError(error)
-                } catch let error as GeneratorError {
-                    throw error
-                } catch {
-                    print("OTHER ERROR", error)
+        
+        try await generateIngredients(
+            for: ingredient,
+            instructions: instructions,
+            prompt: { numItems in
+                .init {
+                    "Create a comma-delimited list of \(numItems) varieties for '\(ingredientName)'. Include the list only. No repeats."
                 }
             }
-
-        } catch let error as LanguageModelSession.GenerationError {
-            session.handleGenerationError(error)
-        } catch let error as GeneratorError {
-            throw error
-        } catch {
-            print("OTHER ERROR", error)
-        }
+        )
     }
 }

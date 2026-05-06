@@ -54,6 +54,20 @@ struct GeneratedVariety: Equatable {
 // NOTE: in maintaining these models, put properties in the schema namespaced model
 // and everything else (methods, etc) in the extension.
 
+/// A food group or ingredient that contains ingredients or varieties, respectively
+protocol FoodContainer {
+//    associatedtype Contained: FoodContained
+    var name: String { get set }
+    func getFoodGroup() -> FoodGroup.Group
+    func getContainedNames() -> [String]
+    func makeGenerationSettings() -> IngredientGenerationSettings
+    func addContained(_ contained: some FoodContained)
+}
+
+protocol FoodContained {
+    
+}
+
 // MARK: - FoodGroup
 
 extension SchemaV1 {
@@ -151,6 +165,29 @@ extension FoodGroup {
     // method such as isSameFood(as other:), etc.
 }
 
+extension FoodGroup: FoodContainer {
+    
+    func getFoodGroup() -> Group {
+        group
+    }
+    func getContainedNames() -> [String] {
+        ingredients?.map { $0.name } ?? []
+    }
+    func makeGenerationSettings() -> IngredientGenerationSettings {
+        .init(
+            group: getFoodGroup(),
+            kind: .ingredients,
+            existingCount: getContainedNames().count
+        )
+    }
+    func addContained(_ contained: some FoodContained) {
+        guard let contained = contained as? Ingredient else {
+            return
+        }
+        addIngredient(contained)
+    }
+}
+
 // MARK: - Ingredient
 
 extension SchemaV1 {
@@ -185,6 +222,31 @@ extension Ingredient {
         varieties?.append(variety)
     }
 }
+
+extension Ingredient: FoodContainer {
+    
+    func getFoodGroup() -> FoodGroup.Group {
+        foodGroup?.group ?? .staple
+    }
+    func getContainedNames() -> [String] {
+        varieties?.map { $0.name } ?? []
+    }
+    func makeGenerationSettings() -> IngredientGenerationSettings {
+        .init(
+            group: getFoodGroup(),
+            kind: .varieties,
+            existingCount: getContainedNames().count
+        )
+    }
+    func addContained(_ contained: some FoodContained) {
+        guard let contained = contained as? Variety else {
+            return
+        }
+        addVariety(contained)
+    }
+}
+
+extension Ingredient: FoodContained {}
 
 extension Ingredient: Comparable {
     
@@ -232,6 +294,8 @@ extension Variety {
         self.isRegional = isRegional ?? true
     }
 }
+
+extension Variety: FoodContained {}
 
 extension Variety: Comparable {
     

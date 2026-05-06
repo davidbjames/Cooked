@@ -9,70 +9,40 @@ import Foundation
 import FoundationModels
 import SwiftData
 
-enum GeneratorError: Error {
-    case availability(SystemLanguageModel.Availability.UnavailableReason)
-    case cancelled
-    var reason: SystemLanguageModel.Availability.UnavailableReason {
-        switch self {
-        case .availability(let reason): reason
-        case .cancelled: fatalError("No availability reason for .cancelled")
-        }
-    }
-}
-extension SystemLanguageModel.Availability {
-    var isAvailable: Bool {
-        switch self {
-        case .available: true
-        case .unavailable: false
-        }
-    }
-    var isSupported: Bool {
-        switch self {
-        case .unavailable(.deviceNotEligible): false
-        default: true
-        }
-    }
-}
-
-extension LanguageModelSession {
-    func handleGenerationError(_ error: GenerationError) {
-        print("GENERATION ERROR", error)
-        switch error {
-        case .rateLimited(let context):
-            print(context)
-        case .exceededContextWindowSize(let context):
-            print(context)
-        case .assetsUnavailable(let context):
-            print(context)
-        case .guardrailViolation(let context):
-            print(context)
-            FeedbackLogger.log(session: self, sentiment: .negative, issues: [.init(category: .triggeredGuardrailUnexpectedly, explanation: "Lists of food ingredients and varieties, individually one or two words are triggering guardrail violations based on single words without any context like 'black' or 'blonde' or 'goose' or 'turkey' e.g. in reference to food descriptions.")], desiredOutput: .response(.init(assetIDs: [], segments: [.text(.init(content: ""))])))
-            print(FeedbackLogger.feedbackFileURL)
-        case .unsupportedGuide(let context):
-            print(context)
-        case .unsupportedLanguageOrLocale(let context):
-            print(context)
-        case .decodingFailure(let context):
-            print(context)
-        case .concurrentRequests(let context):
-            print(context)
-        case .refusal(let refusal, let context):
-            print(refusal)
-            print(context)
-        @unknown default:
-            fatalError()
-        }
-        print("------ TRANSCRIPT ------")
-        print(transcript)
-        print("------------------------")
-    }
-}
-
-/// Observable view model responsible for generating anything from the local SLM
+/// Observable view model responsible for generating anything from the local SLM.
+/// This base class should remain general enough for any type of generation.
 @MainActor
 class Generator {
     
     let modelContext: ModelContext
+    
+    /// Holds pre-run configuration set up by factory methods before `generate()` is called.
+    /// Add new per-run state here rather than as ad-hoc properties on subclasses.
+    struct Configuration {
+        var tools: [any Tool] = []
+        var token: GenerationToken = .init()
+        var debug: Bool {
+            #if DEBUG
+            true
+            #else
+            false
+            #endif
+        }
+    }
+    
+    var configuration = Configuration()
+    
+    var token: GenerationToken {
+        get {
+            configuration.token
+        }
+        set {
+            configuration.token = newValue
+        }
+    }
+    var debug: Bool {
+        configuration.debug
+    }
     
     static var regionName: String = {
         let regionName: String
@@ -84,23 +54,28 @@ class Generator {
         return regionName
     }()
     
-    final class CancellationToken {
+    final class GenerationToken {
         var isCancelled = false
     }
 
-    func generate(cancellationToken: CancellationToken = .init()) async throws {
-        // Base implementation — subclasses override and call super
-    }
-
-    init(modelContext: ModelContext) throws {
+    init(modelContext: ModelContext, token: GenerationToken = .init()) throws {
         let slm = SystemLanguageModel.default
         // throw GeneratorError.availability(.deviceNotEligible)
         if case .unavailable(let reason) = slm.availability {
             throw GeneratorError.availability(reason)
         }
         self.modelContext = modelContext
+        self.configuration.token = token
         
         print("Region:", Self.regionName)
     }
-
+    
+    func generate() async throws(GeneratorError) {
+        // Base implementation — subclasses override
+    }
+    
+    func makeDegenerateDetector() -> any DegenerateDetector {
+        NonDegenerateDetector()
+    }
 }
+

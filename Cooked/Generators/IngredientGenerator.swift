@@ -15,15 +15,13 @@ import SwiftData
 final class IngredientGenerator: Generator {
     
     private(set) var foodGroups: [FoodGroup] = []
+    
+    /// Track the currently generating group for UX
     private(set) var generatingGroup: FoodGroup.Group? = nil
     
-    @ObservationIgnored
-    private var session: LanguageModelSession!
-    
-    override func generate(cancellationToken: CancellationToken = .init()) async throws {
-        try await super.generate(cancellationToken: cancellationToken)
+    override func generate() async throws(GeneratorError) {
         
-        let tools = [any Tool]()
+        try await super.generate()
         
         // TODO: Create Profile settings view that can set this
         // Profile.current(in: modelContext).includeInternationalIngredients = true
@@ -54,7 +52,7 @@ final class IngredientGenerator: Generator {
         
         for group in FoodGroup.Group.allCases { // .dropFirst(2) for testing one group only
             
-            if cancellationToken.isCancelled {
+            if token.isCancelled {
                 throw GeneratorError.cancelled
             }
             
@@ -74,11 +72,14 @@ final class IngredientGenerator: Generator {
                 foodGroups.append(foodGroup)
                 modelContext.insert(foodGroup)
             }
-            let existingIngredients: [String] = foodGroup.getIngredientNames()
+            let existingIngredients: [String] = foodGroup.getContainedNames()
             let existingIngredientsString = existingIngredients.joined(separator: ", ")
             
             generatingGroup = group
-            print("------------------------------")
+            
+            if debug {
+                print("------------------------------")
+            }
             
             let instructions = Instructions {
                 "Your job is to a build list of food ingredients from the \(group.rawValue) food group."
@@ -108,178 +109,24 @@ final class IngredientGenerator: Generator {
                     "Exclusion list: \(existingIngredientsString). (DO NOT include any of these under any circumstances, including spelling variations and synonyms.)"
                 }
             }
-            if !existingIngredients.isEmpty {
+            if !existingIngredients.isEmpty && debug {
                 print("Exclude:", existingIngredientsString, "(\(existingIngredients.count))")
             }
             
-            session = LanguageModelSession(
-                // LEARNING: mitigate guardrail errors (e.g. food allergies, etc).
-                // Note: this "permissive" flag only works with String content - not Generable
-                model: .init(guardrails: .permissiveContentTransformations),
-                tools: tools,
-                instructions: instructions
+            try await generateIngredients(
+                for: foodGroup,
+                instructions: instructions,
+                prompt: { numItems in
+                    .init {
+                        "Create a comma-delimited list of \(numItems) food ingredients from the \(group.rawValue) food group. Include the list only. No repeats."
+                    }
+                }
             )
-            let settings = GenerationSettings(
-                group: group,
-                kind: .ingredients,
-                existingCount: existingIngredients.count
-            )
-            print(settings)
-            
-            let numIngredients = settings.numberOfItems
-            
-            let prompt = Prompt {
-                "Create a comma-delimited list of \(numIngredients) food ingredients from the \(group.rawValue) food group. Include the list only. No repeats."
-                // "If you cannot fulfill this request please explain why."
-            }
-            
-            do {
-                
-                /*
-                let instructionsTokens: Int
-                if #available(iOS 26.4, macOS 26.4, *) {
-                    instructionsTokens = try await SystemLanguageModel.default.tokenCount(for: instructions)
-                    print("Instruction tokens:", instructionsTokens)
-                } else {
-                    instructionsTokens = 0
-                }
-                 */
-                
-                // TODO: experiment with streamed response here
-                
-                let response = try await session.respond(
-                    to: prompt,
-                    generating: String.self,
-                    includeSchemaInPrompt: false,
-                    options: settings.generationOptions
-                )
-
-                print(response.content)
-                
-                if cancellationToken.isCancelled {
-                    throw GeneratorError.cancelled
-                }
-                
-                if #available(iOS 26.4, macOS 26.4, *) {
-                    let tokens = try await SystemLanguageModel.default.tokenCount(for: response.content)
-                    print("Response tokens:", tokens)
-                }
-                
-                if cancellationToken.isCancelled {
-                    throw GeneratorError.cancelled
-                }
-                
-                // Parsing
-                let splitLines = response.content.split(separator: /\d+\.?|[,\n\-•*]+|\band\b/)
-                let trimmedLines = splitLines.map {
-                    $0.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: .punctuationCharacters).lowercased()
-                }
-                print("Responded with:", trimmedLines.count, "items")
-                
-                // Post-generation audit and ingredient build
-                
-                var lastPrefix: String? = nil
-                var consecutivePrefixCount = 0
-                let maxConsecutivePrefix = 2
-                
-                for line in trimmedLines {
-                    guard !line.isEmpty else {
-                        continue
-                    }
-                    guard
-                        foodGroup.ingredients?.contains(where: { $0.name == line }) != true
-                        // nil (no ingredients yet) or false (not saved yet)
-                    else {
-                        // Already have this ingredient
-                        print("(skipping \(line) - already exists)")
-                        continue
-                    }
-                    // Detect degenerate repetition (e.g. "rye crackers", "rye rolls", "rye bread")
-                    let prefix = line.split(separator: " ").first.map(String.init) ?? line
-                    if prefix == lastPrefix {
-                        consecutivePrefixCount += 1
-                        if consecutivePrefixCount >= maxConsecutivePrefix {
-                            print("(stopping - degenerate repetition detected on '\(prefix)')")
-                            break
-                        }
-                    } else {
-                        lastPrefix = prefix
-                        consecutivePrefixCount = 1
-                    }
-                    let auditSession = LanguageModelSession(
-                        model: .init(guardrails: .permissiveContentTransformations),
-                        instructions: .init {
-                            "Your job is to answer questions about food."
-                            "A sentance-like phrase is never a type of food. For example: 'a kind of food' or 'a list of food varieties for potatoes' are not types of food."
-                        }
-                    )
-                    // Note: this check below is not needed if comma-delimited list can be relied on.
-                    // However, note this caveat in the docs for permissiveContentTransformations:
-                    //     "when the purpose of your instructions and prompts isn’t to transform input
-                    //      from a person, the model may still refuse to respond to potentially unsafe
-                    //      prompts by generating an explanation"
-                    // .. in which case, you will need to do this check to filter the explanation.
-                    do {
-                        let isFood = try await auditSession.respond(
-                            to: "Is '\(line)' in the '\(group.rawValue)' food group?",
-                            generating: Bool.self
-                            // options: .init(sampling: .greedy) // TBD
-                        )
-                        guard isFood.content else {
-                            print("(skipping \(line) - not a '\(group.rawValue)' food)")
-                            continue
-                        }
-                        if cancellationToken.isCancelled {
-                            throw GeneratorError.cancelled
-                        }
-                        let isRegional = try await auditSession.respond(
-                            to: "Is '\(line)' a common food in \(Self.regionName)?",
-                            generating: Bool.self
-                        )
-                        print(line, isRegional.content ? "(regional)" : "(NOT regional)")
-                        
-                        if cancellationToken.isCancelled {
-                            throw GeneratorError.cancelled
-                        }
-                        let ingredient = Ingredient(name: line, isRegional: isRegional.content)
-                        foodGroup.addIngredient(ingredient)
-                        
-                        // Save immediately so this Ingredient gets a permanent PersistentIdentifier.
-                        // There was a problem in IngredientListView which uses these identifiers
-                        // to manage expand/collapse state. Without getting the permanent id upfront
-                        // (as we're doing here) the state was broken due to having temporary
-                        // identifiers up until the point that SwiftData does the implicit save
-                        // and assigns permanent ones. Being different ids, it was causing
-                        // a view re-render.
-                        try? modelContext.save()
-                    } catch let error as LanguageModelSession.GenerationError {
-                        // TODO: handle generation errors gracefully
-                        session.handleGenerationError(error)
-                    } catch let error as GeneratorError {
-                        generatingGroup = nil
-                        throw error
-                    } catch {
-                        print("OTHER ERROR", error)
-                    }
-                }
-                
-                // CHECK: this appeared to mitigate some errors when running each of these session/generations
-                // try await Task.sleep(for: .seconds(0.5))
-                
-//                print("------ TRANSCRIPT ------")
-//                print(session.transcript)
-//                print("------------------------")
-                
-            } catch let error as LanguageModelSession.GenerationError {
-                // TODO: handle generation errors gracefully
-                session.handleGenerationError(error)
-            } catch let error as GeneratorError {
-                generatingGroup = nil
-                throw error
-            } catch {
-                print("OTHER ERROR", error)
-            }
         }
         generatingGroup = nil
+    }
+    
+    override func makeDegenerateDetector() -> any DegenerateDetector {
+        IngredientDegenerateRepetitionDetector(debug: debug)
     }
 }

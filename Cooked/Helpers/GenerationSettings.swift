@@ -1,5 +1,5 @@
 //
-//  GenerationSettings.swift
+//  IngredientGenerationSettings.swift
 //  Cooked
 //
 //  Created by David James on 16/04/2026.
@@ -7,7 +7,7 @@
 
 import FoundationModels
 
-struct GenerationSettings {
+struct IngredientGenerationSettings {
     
     enum Kind: String {
         case ingredients, varieties
@@ -122,7 +122,7 @@ struct GenerationSettings {
     }
 }
 
-extension GenerationSettings: CustomStringConvertible {
+extension IngredientGenerationSettings: CustomStringConvertible {
     
     var description: String {
         var result = [
