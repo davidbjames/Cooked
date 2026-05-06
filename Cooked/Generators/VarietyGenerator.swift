@@ -103,27 +103,35 @@ final class VarietyGenerator: Generator {
                         "A sentance-like phrase is never a type of food. For example: 'a kind of food' or 'a list of food varieties for potatoes' are not types of food."
                     }
                 )
-                let isVariety = try await auditSession.respond(
-                    to: "Is '\(line)' a variety of '\(ingredientName)'?",
-                    generating: Bool.self
-                )
-                guard isVariety.content else {
-                    print("(skipping \(line) - not a variety of '\(ingredientName)')")
-                    continue
+                do {
+                    let isVariety = try await auditSession.respond(
+                        to: "Is '\(line)' a variety of '\(ingredientName)'?",
+                        generating: Bool.self
+                    )
+                    guard isVariety.content else {
+                        print("(skipping \(line) - not a variety of '\(ingredientName)')")
+                        continue
+                    }
+                    if cancellationToken.isCancelled {
+                        throw GeneratorError.cancelled
+                    }
+                    let isRegional = try await auditSession.respond(
+                        to: "Is '\(line)' a common variety in \(Self.regionName)?",
+                        generating: Bool.self
+                    )
+                    print(line, isRegional.content ? "(regional)" : "(NOT regional)")
+                    if cancellationToken.isCancelled {
+                        throw GeneratorError.cancelled
+                    }
+                    let variety = Variety(name: line, isRegional: isRegional.content)
+                    ingredient.addVariety(variety)
+                } catch let error as LanguageModelSession.GenerationError {
+                    session.handleGenerationError(error)
+                } catch let error as GeneratorError {
+                    throw error
+                } catch {
+                    print("OTHER ERROR", error)
                 }
-                if cancellationToken.isCancelled {
-                    throw GeneratorError.cancelled
-                }
-                let isRegional = try await auditSession.respond(
-                    to: "Is '\(line)' a common variety in \(Self.regionName)?",
-                    generating: Bool.self
-                )
-                print(line, isRegional.content ? "(regional)" : "(NOT regional)")
-                if cancellationToken.isCancelled {
-                    throw GeneratorError.cancelled
-                }
-                let variety = Variety(name: line, isRegional: isRegional.content)
-                ingredient.addVariety(variety)
             }
 
         } catch let error as LanguageModelSession.GenerationError {

@@ -219,38 +219,48 @@ final class IngredientGenerator: Generator {
                     //      from a person, the model may still refuse to respond to potentially unsafe
                     //      prompts by generating an explanation"
                     // .. in which case, you will need to do this check to filter the explanation.
-                    let isFood = try await auditSession.respond(
-                        to: "Is '\(line)' in the '\(group.rawValue)' food group?",
-                        generating: Bool.self
-                        // options: .init(sampling: .greedy) // TBD
-                    )
-                    guard isFood.content else {
-                        print("(skipping \(line) - not a '\(group.rawValue)' food)")
-                        continue
+                    do {
+                        let isFood = try await auditSession.respond(
+                            to: "Is '\(line)' in the '\(group.rawValue)' food group?",
+                            generating: Bool.self
+                            // options: .init(sampling: .greedy) // TBD
+                        )
+                        guard isFood.content else {
+                            print("(skipping \(line) - not a '\(group.rawValue)' food)")
+                            continue
+                        }
+                        if cancellationToken.isCancelled {
+                            throw GeneratorError.cancelled
+                        }
+                        let isRegional = try await auditSession.respond(
+                            to: "Is '\(line)' a common food in \(Self.regionName)?",
+                            generating: Bool.self
+                        )
+                        print(line, isRegional.content ? "(regional)" : "(NOT regional)")
+                        
+                        if cancellationToken.isCancelled {
+                            throw GeneratorError.cancelled
+                        }
+                        let ingredient = Ingredient(name: line, isRegional: isRegional.content)
+                        foodGroup.addIngredient(ingredient)
+                        
+                        // Save immediately so this Ingredient gets a permanent PersistentIdentifier.
+                        // There was a problem in IngredientListView which uses these identifiers
+                        // to manage expand/collapse state. Without getting the permanent id upfront
+                        // (as we're doing here) the state was broken due to having temporary
+                        // identifiers up until the point that SwiftData does the implicit save
+                        // and assigns permanent ones. Being different ids, it was causing
+                        // a view re-render.
+                        try? modelContext.save()
+                    } catch let error as LanguageModelSession.GenerationError {
+                        // TODO: handle generation errors gracefully
+                        session.handleGenerationError(error)
+                    } catch let error as GeneratorError {
+                        generatingGroup = nil
+                        throw error
+                    } catch {
+                        print("OTHER ERROR", error)
                     }
-                    if cancellationToken.isCancelled {
-                        throw GeneratorError.cancelled
-                    }
-                    let isRegional = try await auditSession.respond(
-                        to: "Is '\(line)' a common food in \(Self.regionName)?",
-                        generating: Bool.self
-                    )
-                    print(line, isRegional.content ? "(regional)" : "(NOT regional)")
-                    
-                    if cancellationToken.isCancelled {
-                        throw GeneratorError.cancelled
-                    }
-                    let ingredient = Ingredient(name: line, isRegional: isRegional.content)
-                    foodGroup.addIngredient(ingredient)
-                    
-                    // Save immediately so this Ingredient gets a permanent PersistentIdentifier.
-                    // There was a problem in IngredientListView which uses these identifiers
-                    // to manage expand/collapse state. Without getting the permanent id upfront
-                    // (as we're doing here) the state was broken due to having temporary
-                    // identifiers up until the point that SwiftData does the implicit save
-                    // and assigns permanent ones. Being different ids, it was causing
-                    // a view re-render.
-                    try? modelContext.save()
                 }
                 
                 // CHECK: this appeared to mitigate some errors when running each of these session/generations
