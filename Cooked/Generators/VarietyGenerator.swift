@@ -98,7 +98,10 @@ final class VarietyGenerator: Generator {
                 }
                 let auditSession = LanguageModelSession(
                     model: .init(guardrails: .permissiveContentTransformations),
-                    instructions: "Your job is to answer questions about food."
+                    instructions: .init {
+                        "Your job is to answer questions about food."
+                        "A sentance-like phrase is never a type of food. For example: 'a kind of food' or 'a list of food varieties for potatoes' are not types of food."
+                    }
                 )
                 let isVariety = try await auditSession.respond(
                     to: "Is '\(line)' a variety of '\(ingredientName)'?",

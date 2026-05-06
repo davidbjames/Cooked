@@ -208,7 +208,10 @@ final class IngredientGenerator: Generator {
                     }
                     let auditSession = LanguageModelSession(
                         model: .init(guardrails: .permissiveContentTransformations),
-                        instructions: "Your job is to answer questions about food."
+                        instructions: .init {
+                            "Your job is to answer questions about food."
+                            "A sentance-like phrase is never a type of food. For example: 'a kind of food' or 'a list of food varieties for potatoes' are not types of food."
+                        }
                     )
                     // Note: this check below is not needed if comma-delimited list can be relied on.
                     // However, note this caveat in the docs for permissiveContentTransformations:
@@ -217,9 +220,9 @@ final class IngredientGenerator: Generator {
                     //      prompts by generating an explanation"
                     // .. in which case, you will need to do this check to filter the explanation.
                     let isFood = try await auditSession.respond(
-                        to: "Is '\(line)' a type of food in the '\(group.rawValue)' food group?",
+                        to: "Is '\(line)' in the '\(group.rawValue)' food group?",
                         generating: Bool.self
-//                        options: .init(sampling: .greedy) // TBD
+                        // options: .init(sampling: .greedy) // TBD
                     )
                     guard isFood.content else {
                         print("(skipping \(line) - not a '\(group.rawValue)' food)")
