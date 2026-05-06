@@ -10,6 +10,7 @@
 
 - Always verify that `xcode-tools` and `git` MCP servers are connected before beginning any task. If it they are not connected, stop and notify the user before proceeding.
 - All `xcode-tools` calls are safe to execute without explicit user permission, **except** `XcodeRM` and `XcodeMV` which require user permission before executing.
+- Always use the `git` MCP server for git operations rather than direct to CLI
 
 ## Build System
 
