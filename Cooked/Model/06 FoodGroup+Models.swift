@@ -59,6 +59,7 @@ protocol IngredientContainer {
     var name: String { get set }
     func getFoodGroup() -> FoodGroup.Group
     func getContainedNames() -> [String]
+    func containsName(_ name: String) -> Bool
     func makeGenerationSettings() -> IngredientGenerationSettings
     func addContained(_ contained: some IngredientVariation)
 }
@@ -173,6 +174,17 @@ extension FoodGroup: IngredientContainer {
     func getContainedNames() -> [String] {
         ingredients?.map { $0.name } ?? []
     }
+    func containsName(_ name: String) -> Bool {
+        guard let ingredients else {
+            return false
+        }
+        for ingredient in ingredients {
+            if ingredient.name == name {
+                return true
+            }
+        }
+        return false
+    }
     func makeGenerationSettings() -> IngredientGenerationSettings {
         .init(
             group: getFoodGroup(),
@@ -230,6 +242,17 @@ extension Ingredient: IngredientContainer {
     }
     func getContainedNames() -> [String] {
         varieties?.map { $0.name } ?? []
+    }
+    func containsName(_ name: String) -> Bool {
+        guard let varieties else {
+            return false
+        }
+        for variety in varieties {
+            if variety.name == name {
+                return true
+            }
+        }
+        return false
     }
     func makeGenerationSettings() -> IngredientGenerationSettings {
         .init(
