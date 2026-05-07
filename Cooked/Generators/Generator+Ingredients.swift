@@ -12,7 +12,7 @@ import FoundationModels
 extension Generator {
     
     /// Generate ingredients or varieties
-    func generateIngredients<Container: FoodContainer>(for container: Container, instructions: Instructions, prompt promptBuilder: (_ numItems: Int) -> Prompt) async throws(GeneratorError) {
+    func generateIngredients<Container: IngredientContainer>(for container: Container, instructions: Instructions, prompt promptBuilder: (_ numItems: Int) -> Prompt) async throws(GeneratorError) {
         
         let session = LanguageModelSession(
             model: .init(guardrails: .permissiveContentTransformations),

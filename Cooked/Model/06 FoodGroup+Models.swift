@@ -55,17 +55,17 @@ struct GeneratedVariety: Equatable {
 // and everything else (methods, etc) in the extension.
 
 /// A food group or ingredient that contains ingredients or varieties, respectively
-protocol FoodContainer {
-//    associatedtype Contained: FoodContained
+protocol IngredientContainer {
     var name: String { get set }
     func getFoodGroup() -> FoodGroup.Group
     func getContainedNames() -> [String]
     func makeGenerationSettings() -> IngredientGenerationSettings
-    func addContained(_ contained: some FoodContained)
+    func addContained(_ contained: some IngredientVariation)
 }
 
-protocol FoodContained {
-    
+/// Can base ingredient or a variety
+protocol IngredientVariation {
+    var name: String { get set }
 }
 
 // MARK: - FoodGroup
@@ -165,7 +165,7 @@ extension FoodGroup {
     // method such as isSameFood(as other:), etc.
 }
 
-extension FoodGroup: FoodContainer {
+extension FoodGroup: IngredientContainer {
     
     func getFoodGroup() -> Group {
         group
@@ -180,7 +180,7 @@ extension FoodGroup: FoodContainer {
             existingCount: getContainedNames().count
         )
     }
-    func addContained(_ contained: some FoodContained) {
+    func addContained(_ contained: some IngredientVariation) {
         guard let contained = contained as? Ingredient else {
             return
         }
@@ -223,7 +223,7 @@ extension Ingredient {
     }
 }
 
-extension Ingredient: FoodContainer {
+extension Ingredient: IngredientContainer {
     
     func getFoodGroup() -> FoodGroup.Group {
         foodGroup?.group ?? .staple
@@ -238,7 +238,7 @@ extension Ingredient: FoodContainer {
             existingCount: getContainedNames().count
         )
     }
-    func addContained(_ contained: some FoodContained) {
+    func addContained(_ contained: some IngredientVariation) {
         guard let contained = contained as? Variety else {
             return
         }
@@ -246,7 +246,7 @@ extension Ingredient: FoodContainer {
     }
 }
 
-extension Ingredient: FoodContained {}
+extension Ingredient: IngredientVariation {}
 
 extension Ingredient: Comparable {
     
@@ -295,7 +295,7 @@ extension Variety {
     }
 }
 
-extension Variety: FoodContained {}
+extension Variety: IngredientVariation {}
 
 extension Variety: Comparable {
     
