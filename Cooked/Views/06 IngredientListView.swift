@@ -155,6 +155,7 @@ struct IngredientListView: View {
 // MARK: - Food Group Picker
 
 private struct FoodGroupPicker: View {
+    
     @Binding var selectedGroup: FoodGroup.Group
     let generatingGroup: FoodGroup.Group?
 
@@ -172,10 +173,11 @@ private struct FoodGroupPicker: View {
                         .background(selectedGroup == group ? AnyShapeStyle(.tint) : AnyShapeStyle(.tint.opacity(0.12)), in: Capsule())
                         .foregroundStyle(selectedGroup == group ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
                         .overlay(alignment: .bottom) {
-                            ThinkingIndicator(isAnimating: generatingGroup == group)
+                            ThinkingIndicator()
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 12)
                                 .padding(.bottom, 4)
+                                .opacity(generatingGroup == group ? 1.0 : 0.0)
                         }
                 }
                 .buttonStyle(.plain)
@@ -185,35 +187,36 @@ private struct FoodGroupPicker: View {
     }
 }
 
-
 // MARK: - Thinking Indicator
 
 private struct ThinkingIndicator: View {
-    let isAnimating: Bool
-    @State private var offset: CGFloat = -1
+    
+    @State private var phase: CGFloat = -1
+    private let dashWidth: CGFloat = 20
 
     var body: some View {
         GeometryReader { geo in
-            let dashWidth: CGFloat = 20
-            let travel = geo.size.width * 0.5 - dashWidth
             Capsule()
                 .frame(width: dashWidth, height: 3)
-                .offset(x: offset * travel + (geo.size.width - dashWidth) / 2)
-        }
-        .frame(height: 3)
-        .opacity(isAnimating ? 1 : 0)
-        .animation(.easeInOut(duration: 0.2), value: isAnimating)
-        .onChange(of: isAnimating) { _, animating in
-            if animating {
-                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                    offset = 1
+                .offset(x: phase * (geo.size.width - dashWidth) / 2)
+                .frame(maxWidth: .infinity, minHeight: 3, maxHeight: geo.size.height, alignment: .bottom)
+                .onAppear {
+                    withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                        phase = 1
+                    }
                 }
-            } else {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    offset = -1
-                }
-            }
         }
+    }
+}
+
+struct FoodGroupPicker_Previews: PreviewProvider {
+    @State static var selectedGroup: FoodGroup.Group = .staple
+    @State static var generatingGroup: FoodGroup.Group? = .staple
+    
+    static var previews: some View {
+        FoodGroupPicker(selectedGroup: $selectedGroup, generatingGroup: generatingGroup)
+            .padding()
+            .previewLayout(.sizeThatFits)
     }
 }
 
