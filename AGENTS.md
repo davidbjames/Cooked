@@ -48,6 +48,12 @@ Usage notes:
 </skill>
 
 <skill>
+<name>swift-api-design-guidelines-skill</name>
+<description>Write, review, or improve Swift APIs using Swift API Design Guidelines for naming, argument labels, documentation comments, terminology, and general conventions. Use when designing new APIs, refactoring existing interfaces, or reviewing API clarity and fluency.</description>
+<location>project</location>
+</skill>
+
+<skill>
 <name>swift-architecture-skill</name>
 <description>Swift architecture patterns and playbooks for MVVM, TCA, Clean Architecture, and more.</description>
 <location>project</location>
