@@ -16,7 +16,21 @@ extension View {
             self
         }
     }
+
+    @ViewBuilder
+    func `if`<TrueContent: View, FalseContent: View>(
+        _ condition: Bool,
+        transform: (Self) -> TrueContent,
+        else elseTransform: (Self) -> FalseContent
+    ) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            elseTransform(self)
+        }
+    }
 }
+
 
 extension Binding {
     /// Creates a read-only binding with only a getter.
