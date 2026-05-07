@@ -48,6 +48,12 @@ Usage notes:
 </skill>
 
 <skill>
+<name>swift-concurrency-pro</name>
+<description>Reviews Swift code for concurrency correctness, modern API usage, and common async/await pitfalls. Use when reading, writing, or reviewing Swift concurrency code.</description>
+<location>project</location>
+</skill>
+
+<skill>
 <name>swift-testing-pro</name>
 <description>Writes, reviews, and improves Swift Testing code using modern APIs and best practices. Use when reading, writing, or reviewing projects that use Swift Testing.</description>
 <location>project</location>

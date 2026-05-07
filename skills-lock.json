@@ -7,6 +7,12 @@
       "skillPath": "skills/apple-on-device-ai/SKILL.md",
       "computedHash": "19c22d4931884eaa40610799f37a63dc10b1563728e42ed2ff47bd0ec29e4f10"
     },
+    "swift-concurrency-pro": {
+      "source": "twostraws/swift-concurrency-agent-skill",
+      "sourceType": "github",
+      "skillPath": "swift-concurrency-pro/SKILL.md",
+      "computedHash": "dec65531b4bd37d15e6243dbb0d2d1f554b4f4087bcb2e8deb7273f570fa4069"
+    },
     "swift-testing-pro": {
       "source": "twostraws/swift-testing-agent-skill",
       "sourceType": "github",
