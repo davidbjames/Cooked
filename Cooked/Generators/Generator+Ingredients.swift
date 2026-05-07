@@ -21,7 +21,6 @@ extension Generator {
         )
         let settings = container.makeGenerationSettings()
         let numberOfItems = settings.numberOfItems
-        let existingNames = container.getContainedNames()
         
         do {
             let response = try await session.respond(
@@ -65,21 +64,21 @@ extension Generator {
                 guard !line.isEmpty else {
                     continue
                 }
-                guard !existingNames.contains(where: { $0 == line }) else {
+                guard !degenerateDetector.isDegenerate(text: line) else {
+                    break
+                }
+                guard !container.containsName(line) else {
                     if debug {
                         print("(skipping \(line) - already exists)")
                     }
                     continue
-                }
-                guard !degenerateDetector.isDegenerate(text: line) else {
-                    break
                 }
                 
                 let auditSession = LanguageModelSession(
                     model: .init(guardrails: .permissiveContentTransformations),
                     instructions: .init {
                         "Your job is to answer questions about food."
-                        "A sentance-like phrase is never a type of food. For example: 'a kind of food' or 'a list of food varieties for potatoes' are not types of food."
+                        "A sentance or part of a sentance is NEVER a type of food. For example: 'a kind of food' or 'a list of food varieties for potatoes' or similar phrases are NOT types of food."
                     }
                 )
                 do {
