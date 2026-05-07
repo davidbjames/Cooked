@@ -24,7 +24,8 @@ struct IngredientDegenerateRepetitionDetector: DegenerateDetector {
     let debug: Bool
     
     mutating func isDegenerate(text: String) -> Bool {
-        // Detect degenerate repetition (e.g. "rye crackers", "rye rolls", "rye bread")
+        // Detect degenerate repetition (e.g. "rye crackers", "rye rolls", "rye bread"
+        // or "rye", "rye", "rye")
         let prefix = text.split(separator: " ").first.map(String.init) ?? text
         if prefix == lastPrefix {
             consecutivePrefixCount += 1

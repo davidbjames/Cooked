@@ -53,7 +53,7 @@ struct IngredientListView: View {
                             isExpanded: expandedIngredients.contains(ingredient.persistentModelID),
                             isGenerating: generatingVarieties.contains(ingredient.persistentModelID),
                             onToggle: { toggleExpanded(ingredient) },
-                            onSelectVariety: { variety in selectVariety(variety, ingredient: ingredient, group: foodGroup) }
+                            onSelect: { variety in selectVariety(variety, ingredient: ingredient, group: foodGroup) }
                         )
                     }
                 }
@@ -137,7 +137,7 @@ struct IngredientListView: View {
         }
     }
     
-    private func selectVariety(_ variety: Variety, ingredient: Ingredient, group: FoodGroup) {
+    private func selectVariety(_ variety: Variety?, ingredient: Ingredient, group: FoodGroup) {
         guard let varietyGenerationToken else {
             print("**** Variety generation cancellation token does not exist on variety selection")
             return
@@ -151,23 +151,25 @@ struct IngredientListView: View {
     }
 }
 
-// MARK: - Variety Chip
+// MARK: - Food Chip (ingredient or variety)
 
-private struct VarietyChip: View {
-    let variety: Variety
+private struct IngredientChip<Variation: IngredientVariation>: View {
+    let ingredient: Variation
     let onSelect: () -> Void
+
+    private var isIngredient: Bool { ingredient is Ingredient }
 
     var body: some View {
         Button(action: onSelect) {
-            Text(variety.name.capitalized(with: .current))
+            Text(ingredient.name.capitalized(with: .current))
                 .font(.subheadline)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(.tint.opacity(0.12), in: Capsule())
-                .foregroundStyle(.tint)
+                .background(isIngredient ? AnyShapeStyle(.tint) : AnyShapeStyle(.tint.opacity(0.12)), in: Capsule())
+                .foregroundStyle(isIngredient ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(variety.name.capitalized(with: .current))
+        .accessibilityLabel(ingredient.name.capitalized(with: .current))
     }
 }
 
@@ -179,7 +181,7 @@ private struct IngredientRow: View {
     let isExpanded: Bool
     let isGenerating: Bool
     let onToggle: () -> Void
-    let onSelectVariety: (Variety) -> Void
+    let onSelect: (Variety?) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -210,9 +212,12 @@ private struct IngredientRow: View {
                 let varieties = ingredient.varieties ?? []
                 if !varieties.isEmpty || isGenerating {
                     FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
+                        IngredientChip(ingredient: ingredient) {
+                            onSelect(nil)
+                        }
                         ForEach(varieties, id: \.persistentModelID) { variety in
-                            VarietyChip(variety: variety) {
-                                onSelectVariety(variety)
+                            IngredientChip(ingredient: variety) {
+                                onSelect(variety)
                             }
                         }
                         if isGenerating {
