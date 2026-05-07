@@ -164,25 +164,27 @@ private struct FoodGroupPicker: View {
                 Button {
                     selectedGroup = group
                 } label: {
-                    HStack(spacing: 6) {
-                        Text(group.title)
-                            .font(.subheadline)
-                            .fontWeight(selectedGroup == group ? .semibold : .regular)
-                        if generatingGroup == group {
-                            ProgressView()
-                                .scaleEffect(0.7)
+                    Text(group.title)
+                        .font(.subheadline)
+                        .fontWeight(selectedGroup == group ? .semibold : .regular)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 9)
+                        .padding(.leading, 12)
+                        .background(selectedGroup == group ? AnyShapeStyle(.tint) : AnyShapeStyle(.tint.opacity(0.12)), in: Capsule())
+                        .foregroundStyle(selectedGroup == group ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
+                        .overlay(alignment: .trailing) {
+                            if generatingGroup == group {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                                    .tint(selectedGroup == group ? Color.white : Color.accentColor)
+                                    .padding(.trailing, 10)
+                            }
                         }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(selectedGroup == group ? AnyShapeStyle(.tint) : AnyShapeStyle(.tint.opacity(0.12)), in: Capsule())
-                    .foregroundStyle(selectedGroup == group ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
                 }
                 .buttonStyle(.plain)
                 .animation(.easeInOut(duration: 0.2), value: selectedGroup)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
