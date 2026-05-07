@@ -167,22 +167,51 @@ private struct FoodGroupPicker: View {
                     Text(group.title)
                         .font(.subheadline)
                         .fontWeight(selectedGroup == group ? .semibold : .regular)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
-                        .padding(.leading, 12)
                         .background(selectedGroup == group ? AnyShapeStyle(.tint) : AnyShapeStyle(.tint.opacity(0.12)), in: Capsule())
                         .foregroundStyle(selectedGroup == group ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
-                        .overlay(alignment: .trailing) {
-                            if generatingGroup == group {
-                                ProgressView()
-                                    .scaleEffect(0.7)
-                                    .tint(selectedGroup == group ? Color.white : Color.accentColor)
-                                    .padding(.trailing, 10)
-                            }
+                        .overlay(alignment: .bottom) {
+                            ThinkingIndicator(isAnimating: generatingGroup == group)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.bottom, 4)
                         }
                 }
                 .buttonStyle(.plain)
                 .animation(.easeInOut(duration: 0.2), value: selectedGroup)
+            }
+        }
+    }
+}
+
+
+// MARK: - Thinking Indicator
+
+private struct ThinkingIndicator: View {
+    let isAnimating: Bool
+    @State private var offset: CGFloat = -1
+
+    var body: some View {
+        GeometryReader { geo in
+            let dashWidth: CGFloat = 20
+            let travel = geo.size.width * 0.5 - dashWidth
+            Capsule()
+                .frame(width: dashWidth, height: 3)
+                .offset(x: offset * travel + (geo.size.width - dashWidth) / 2)
+        }
+        .frame(height: 3)
+        .opacity(isAnimating ? 1 : 0)
+        .animation(.easeInOut(duration: 0.2), value: isAnimating)
+        .onChange(of: isAnimating) { _, animating in
+            if animating {
+                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                    offset = 1
+                }
+            } else {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    offset = -1
+                }
             }
         }
     }
