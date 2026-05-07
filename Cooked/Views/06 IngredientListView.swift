@@ -24,6 +24,7 @@ struct IngredientListView: View {
     @State private var generatorError: SystemLanguageModel.Availability?
     @State private var ingredientGenerationToken: Generator.GenerationToken
     @State private var varietyGenerationToken: Generator.GenerationToken?
+    @State private var selectedGroup: FoodGroup.Group = .staple
     
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
         _selectedFood = selectedFood
@@ -32,21 +33,17 @@ struct IngredientListView: View {
         _ingredientGenerationToken = State(initialValue: generator.token)
     }
     
+    private var selectedFoodGroup: FoodGroup? {
+        generator.foodGroups.first { $0.group == selectedGroup }
+    }
+    
     var body: some View {
-        List {
-            ForEach(generator.foodGroups, id: \.persistentModelID) { foodGroup in
-                Section(header:
-                    HStack {
-                        Text(foodGroup.group.title)
-                        if generator.generatingGroup == foodGroup.group {
-                            Spacer()
-                            ProgressView()
-                            Text("Generating")
-                                .fontWeight(.regular)
-                                .opacity(0.5)
-                        }
-                    }
-                ) {
+        VStack(spacing: 0) {
+            FoodGroupPicker(selectedGroup: $selectedGroup, generatingGroup: generator.generatingGroup)
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+            List {
+                if let foodGroup = selectedFoodGroup {
                     ForEach(foodGroup.ingredients?.sorted() ?? [], id: \.persistentModelID) { ingredient in
                         IngredientRow(
                             ingredient: ingredient,
@@ -60,9 +57,13 @@ struct IngredientListView: View {
             }
         }
         .navigationTitle("Ingredients")
-        .task {
+        .task(id: selectedGroup) {
+            let oldToken = generator.token
+            generator.token = Generator.GenerationToken()
+            ingredientGenerationToken = generator.token
+            oldToken.isCancelled = true
             do {
-                try await generator.generate()
+                try await generator.generate(group: selectedGroup)
             } catch let error as GeneratorError {
                 switch error {
                 case .cancelled:
@@ -150,6 +151,41 @@ struct IngredientListView: View {
         dismiss()
     }
 }
+
+// MARK: - Food Group Picker
+
+private struct FoodGroupPicker: View {
+    @Binding var selectedGroup: FoodGroup.Group
+    let generatingGroup: FoodGroup.Group?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(FoodGroup.Group.allCases, id: \.self) { group in
+                Button {
+                    selectedGroup = group
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(group.title)
+                            .font(.subheadline)
+                            .fontWeight(selectedGroup == group ? .semibold : .regular)
+                        if generatingGroup == group {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(selectedGroup == group ? AnyShapeStyle(.tint) : AnyShapeStyle(.tint.opacity(0.12)), in: Capsule())
+                    .foregroundStyle(selectedGroup == group ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
+                }
+                .buttonStyle(.plain)
+                .animation(.easeInOut(duration: 0.2), value: selectedGroup)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 
 // MARK: - Food Chip (ingredient or variety)
 

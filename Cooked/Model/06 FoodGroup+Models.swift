@@ -98,8 +98,8 @@ extension FoodGroup {
         
         var title: String {
             switch self {
-            case .staple: "Staple Foods"
-            case .protein: "Protein Foods"
+            case .staple: "Staples"
+            case .protein: "Proteins"
             case .vegetable: "Vegetables"
             }
         }
