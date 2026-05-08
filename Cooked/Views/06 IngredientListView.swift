@@ -50,7 +50,8 @@ struct IngredientListView: View {
                             isExpanded: expandedIngredients.contains(ingredient.persistentModelID),
                             isGenerating: generatingVarieties.contains(ingredient.persistentModelID),
                             onToggle: { toggleExpanded(ingredient) },
-                            onSelect: { variety in selectVariety(variety, ingredient: ingredient, group: foodGroup) }
+                            onSelect: { variety in selectVariety(variety, ingredient: ingredient, group: foodGroup) },
+                            onHide: { hideIngredient(ingredient) }
                         )
                     }
                 }
@@ -131,6 +132,11 @@ struct IngredientListView: View {
                 }
             }
         }
+    }
+    
+    private func hideIngredient(_ ingredient: Ingredient) {
+        ingredient.visibilityState = IngredientVisibility.hidden.rawValue
+        expandedIngredients.remove(ingredient.persistentModelID)
     }
     
     private func selectVariety(_ variety: Variety?, ingredient: Ingredient, group: FoodGroup) {
@@ -247,6 +253,7 @@ private struct IngredientRow: View {
     let isGenerating: Bool
     let onToggle: () -> Void
     let onSelect: (Variety?) -> Void
+    let onHide: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -295,6 +302,11 @@ private struct IngredientRow: View {
             }
         }
         .padding(.vertical, 2)
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive, action: onHide) {
+                Label("Hide", systemImage: "eye.slash")
+            }
+        }
     }
 }
 
