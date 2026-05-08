@@ -51,20 +51,27 @@ extension Generator {
                 }
             }
             
-            let responseValidationSession = LanguageModelSession(
-                model: .init(guardrails: .permissiveContentTransformations),
-                instructions: .init {
-                    "Your job is to answer questions about this string:"
-                    response.content
+            if response.content.hasPrefix("000") {
+                switch settings.kind {
+                case .ingredients:
+                    break // TBD
+                case .varieties:
+                    let variety = Variety(name: container.name, isRegional: true)
+                    container.addContained(variety)
+                    return
                 }
-            )
-            let isListOfFoods = try await responseValidationSession.respond(
-                to: "Does this string look like a list of foods?",
-                generating: Bool.self
-            )
-            if !isListOfFoods.content {
-                throw GeneratorError.modelRefusal(response.content)
             }
+            
+            // LEARNING:
+            // Foundation Models is inconsistent even with clear instructions.
+            // For example: If you provide the response content with:
+            // Instructions: "Your job is to answer questions about this text:" (content)
+            // Prompt: "Does this text include a language model error?"
+            // or variations thereof, or the inverse:
+            // Prompt: "Is this text a list of foods?"
+            // it provides completely inconsistent results, with or without
+            // permissiveContentTransformations. It's either completely random
+            // or overly restrictive.
             
             let splitLines = response.content.split(separator: /\d+\.?|[,\n\-•*]+|\band\b/)
             let trimmedLines = splitLines.map {
