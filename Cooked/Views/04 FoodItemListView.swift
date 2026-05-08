@@ -55,7 +55,11 @@ struct FoodItemListView: View {
                     ingredientGenerator = try IngredientGenerator(modelContext: modelContext)
                     generationState = .available
                 } catch let error as GeneratorError {
-                    generationState = .unavailable(error.reason)
+                    if case let .availability(reason) = error {
+                        generationState = .unavailable(reason)
+                    } else {
+                        generationState = .unavailable(.modelNotReady)
+                    }
                 } catch {
                     generationState = .unavailable(.appleIntelligenceNotEnabled)
                 }

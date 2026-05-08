@@ -20,6 +20,10 @@ extension Generator {
             instructions: instructions
         )
         let settings = container.makeGenerationSettings()
+        if debug {
+            print(settings)
+        }
+        
         let numberOfItems = settings.numberOfItems
         
         do {
@@ -45,6 +49,21 @@ extension Generator {
                 if token.isCancelled {
                     throw GeneratorError.cancelled
                 }
+            }
+            
+            let responseValidationSession = LanguageModelSession(
+                model: .init(guardrails: .permissiveContentTransformations),
+                instructions: .init {
+                    "Your job is to answer questions about this string:"
+                    response.content
+                }
+            )
+            let isListOfFoods = try await responseValidationSession.respond(
+                to: "Does this string look like a list of foods?",
+                generating: Bool.self
+            )
+            if !isListOfFoods.content {
+                throw GeneratorError.modelRefusal(response.content)
             }
             
             let splitLines = response.content.split(separator: /\d+\.?|[,\n\-•*]+|\band\b/)
@@ -94,7 +113,7 @@ extension Generator {
                     case .ingredients:
                         isFoodPrompt = .init { "Is '\(line)' in the '\(container.name)' food group?" }
                     case .varieties:
-                        isFoodPrompt = .init { "Is '\(line)' a variety of '\(container.name)'?" }
+                        isFoodPrompt = .init { "Is '\(line)' a variety name of '\(container.name)'?" }
                     }
                     let isFood = try await auditSession.respond(
                         to: isFoodPrompt,

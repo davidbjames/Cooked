@@ -66,8 +66,9 @@ class Generator {
         }
         self.modelContext = modelContext
         self.configuration.token = token
-        
-        print("Region:", Self.regionName)
+        if debug {
+            print("Region:", Self.regionName)
+        }
     }
     
     func generate() async throws(GeneratorError) {

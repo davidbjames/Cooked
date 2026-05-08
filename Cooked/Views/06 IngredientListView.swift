@@ -21,7 +21,7 @@ struct IngredientListView: View {
     @State private var generator: IngredientGenerator
     @Binding var expandedIngredients: Set<PersistentIdentifier>
     @State private var generatingVarieties: Set<PersistentIdentifier> = []
-    @State private var generatorError: SystemLanguageModel.Availability?
+    @State private var generatorError: GeneratorError?
     @State private var ingredientGenerationToken: Generator.GenerationToken
     @State private var varietyGenerationToken: Generator.GenerationToken?
     @State private var selectedGroup: FoodGroup.Group = .staple
@@ -65,24 +65,20 @@ struct IngredientListView: View {
             do {
                 try await generator.generate(group: selectedGroup)
             } catch let error as GeneratorError {
-                switch error {
-                case .cancelled:
-                    print("************* Cancel ingredient generation")
-                case .availability(let reason):
-                    generatorError = .unavailable(reason)
-                }
+                generatorError = error
             } catch {
                 print(error)
             }
         }
         .alert("Apple Intelligence", isPresented: .init(
-            get: { generatorError?.isAvailable == false },
+            get: { generatorError?.requiresAlert == true },
             set: { if !$0 { generatorError = nil } }
         )) {
             Button("OK", role: .cancel) { generatorError = nil }
         } message: {
-            if case let .unavailable(error) = generatorError {
-                switch error {
+            switch generatorError {
+            case .availability(let unavailableReason):
+                switch unavailableReason {
                 case .appleIntelligenceNotEnabled:
                     Text("Apple Intelligence is not enabled. Please check it is enabled in Settings and try again.")
                 case .deviceNotEligible:
@@ -92,7 +88,11 @@ struct IngredientListView: View {
                 @unknown default:
                     fatalError()
                 }
-            } else {
+            case .modelRefusal(let string):
+                Text(string)
+            case .cancelled:
+                EmptyView() // this will never hit
+            case nil:
                 Text("Please try again later.")
             }
         }
@@ -125,12 +125,7 @@ struct IngredientListView: View {
                     generatingVarieties.remove(id)
                 } catch let error as GeneratorError {
                     generatingVarieties.remove(id)
-                    switch error {
-                    case .cancelled:
-                        print("************* Cancel variety generation for \(ingredient.name).")
-                    case .availability(let reason):
-                        generatorError = .unavailable(reason)
-                    }
+                    generatorError = error
                 } catch {
                     generatingVarieties.remove(id)
                 }

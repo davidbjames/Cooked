@@ -38,6 +38,7 @@ final class VarietyGenerator: Generator {
             "Varieties should always include the full name, variety plus food name, e.g. 'russet potatoes'."
             "Variety names must always be lower cased, e.g. 'russet potatoes'."
             "Varieties MUST not be repeated in the list."
+            "Include the list ONLY. NO headings such as 'varieties of potatoes include:' or 'delimited list of varieties:' or similar."
             // TBD: pluralization comment similar to ingredients
             if !existingVarieties.isEmpty {
                 "Exclusion list: \(existingVarieties.joined(separator: ", ")). (DO NOT include any of these under any circumstances, including spelling variations and synonyms.)"
@@ -49,7 +50,7 @@ final class VarietyGenerator: Generator {
             instructions: instructions,
             prompt: { numItems in
                 .init {
-                    "Create a comma-delimited list of \(numItems) varieties for '\(ingredientName)'. Include the list only. No repeats."
+                    "Create a comma-delimited list of \(numItems) varieties of '\(ingredientName)'. Include the list only. No repeats."
                 }
             }
         )
