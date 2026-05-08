@@ -44,7 +44,7 @@ struct IngredientListView: View {
                 .padding(.vertical, 10)
             List {
                 if let foodGroup = selectedFoodGroup {
-                    ForEach(foodGroup.ingredients?.sorted() ?? [], id: \.persistentModelID) { ingredient in
+                    ForEach(foodGroup.ingredients?.filter { !$0.isHidden }.sorted() ?? [], id: \.persistentModelID) { ingredient in
                         IngredientRow(
                             ingredient: ingredient,
                             isExpanded: expandedIngredients.contains(ingredient.persistentModelID),
@@ -274,7 +274,7 @@ private struct IngredientRow: View {
             if isExpanded {
                 // Unlike ingredients, varieties are not sorted so the
                 // generating items remain stable for selection.
-                let varieties = ingredient.varieties ?? []
+                let varieties = ingredient.varieties?.filter { !$0.isHidden } ?? []
                 if !varieties.isEmpty || isGenerating {
                     FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
                         IngredientChip(ingredient: ingredient) {

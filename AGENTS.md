@@ -16,9 +16,11 @@ if something {
 if something { code here }
 ```
 
+- Always use a protocol default implementation extension if the functionality can be put there, in order to avoid redundancy in conforming types.
+
 ## MCP Servers
 
-- Always verify that `xcode-tools` and `git` MCP servers are connected before beginning any task. If it they are not connected, stop and notify the user before proceeding.
+- Always verify that `xcode-tools` and `git` MCP servers are connected before beginning any task. If it they are not connected, stop and notify the user before proceeding. Otherwise, don't mention it.
 - All `xcode-tools` calls are safe to execute without explicit user permission, **except** `XcodeRM` and `XcodeMV` which require user permission before executing.
 - Always use the `git` MCP server for git operations rather than direct to CLI
 
@@ -32,6 +34,10 @@ if something { code here }
 - SwiftUI previews available via `RenderPreview`
 - Use `RunTerminalCommand` with `xcodebuild` or `xcrun simctl` to run the app on a simulator
 - To run on David's iPhone use UDID `00008130-00014C4A2E02001C` (iOS 26.5)
+
+## Git
+
+- The first line of a commit should be no more than 72 characters.
 
 <skills_system priority="1">
 
