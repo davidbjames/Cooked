@@ -324,7 +324,7 @@ private struct IngredientRow: View {
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, isExpanded ? 10 : 2)
         .listRowInsets(EdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32))
         .swipeActions(edge: .trailing) {
             Button(role: .destructive, action: onHide) {
