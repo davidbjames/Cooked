@@ -121,7 +121,7 @@ extension Generator {
                     case .ingredients:
                         isFoodPrompt = .init { "Is '\(line)' in the '\(container.name)' food group?" }
                     case .varieties:
-                        isFoodPrompt = .init { "Is '\(line)' a variety name of '\(container.name)'?" }
+                        isFoodPrompt = .init { "Is '\(line)' a variety of '\(container.name)'?" }
                     }
                     let isFood = try await auditSession.respond(
                         to: isFoodPrompt,

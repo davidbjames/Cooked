@@ -26,6 +26,8 @@ struct IngredientListView: View {
     @State private var varietyGenerationToken: Generator.GenerationToken?
     @State private var selectedGroup: FoodGroup.Group = .staple
     
+    @AppStorage("ingredientListNoteDismissed") private var ingredientListNoteDismissed = false
+    
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
         _selectedFood = selectedFood
         _generator = State(initialValue: generator)
@@ -43,6 +45,11 @@ struct IngredientListView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 10)
             List {
+                if !ingredientListNoteDismissed {
+                    IngredientListNote(isDismissed: $ingredientListNoteDismissed)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 32, bottom: 8, trailing: 32))
+                }
                 if let foodGroup = selectedFoodGroup {
                     let ingredients = foodGroup.ingredients?.filter { !$0.isHidden }.sorted() ?? []
                     ForEach(Array(ingredients.enumerated()), id: \.element.persistentModelID) { index, ingredient in
@@ -159,6 +166,38 @@ struct IngredientListView: View {
         modelContext.insert(foodItem)
         selectedFood = foodItem
         dismiss()
+    }
+}
+
+// MARK: - Ingredient List Note
+
+private struct IngredientListNote: View {
+
+    @Binding var isDismissed: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("Note: ingredients and varieties are generated from on-device AI. Results may vary. Tap an ingredient to see varieties. Tap variety to select. Swipe ingredients or hide varieties so they don't appear again.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if false {
+                // TBD: leave this off for now.
+                // Possibly show it in edit mode only?
+                Button {
+                    withAnimation {
+                        isDismissed = true
+                    }
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                        .imageScale(.medium)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss note")
+            }
+        }
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
     }
 }
 
