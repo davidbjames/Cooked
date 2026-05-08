@@ -51,7 +51,8 @@ struct IngredientListView: View {
                             isGenerating: generatingVarieties.contains(ingredient.persistentModelID),
                             onToggle: { toggleExpanded(ingredient) },
                             onSelect: { variety in selectVariety(variety, ingredient: ingredient, group: foodGroup) },
-                            onHide: { hideIngredient(ingredient) }
+                            onHide: { hideIngredient(ingredient) },
+                            onHideVariety: { variety in hideVariety(variety) }
                         )
                     }
                 }
@@ -137,6 +138,10 @@ struct IngredientListView: View {
     private func hideIngredient(_ ingredient: Ingredient) {
         ingredient.visibilityState = IngredientVisibility.hidden.rawValue
         expandedIngredients.remove(ingredient.persistentModelID)
+    }
+    
+    private func hideVariety(_ variety: Variety) {
+        variety.visibilityState = IngredientVisibility.hidden.rawValue
     }
     
     private func selectVariety(_ variety: Variety?, ingredient: Ingredient, group: FoodGroup) {
@@ -227,18 +232,29 @@ struct FoodGroupPicker_Previews: PreviewProvider {
 private struct IngredientChip<Variation: IngredientVariation>: View {
     let ingredient: Variation
     let onSelect: () -> Void
+    var onHide: (() -> Void)? = nil
 
     private var isIngredient: Bool { ingredient is Ingredient }
 
     var body: some View {
-        Button(action: onSelect) {
-            Text(ingredient.name.capitalized(with: .current))
-                .font(.subheadline)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(isIngredient ? AnyShapeStyle(.tint) : AnyShapeStyle(.tint.opacity(0.12)), in: Capsule())
-                .foregroundStyle(isIngredient ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
+        HStack(spacing: 4) {
+            Button(action: onSelect) {
+                Text(ingredient.name.capitalized(with: .current))
+                    .font(.subheadline)
+            }
+            if !isIngredient, let onHide {
+                Button(action: onHide) {
+                    Image(systemName: "xmark.circle.fill")
+                        .imageScale(.large)
+                        .font(.caption)
+                }
+                .accessibilityLabel("Hide \(ingredient.name.capitalized(with: .current))")
+            }
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(isIngredient ? AnyShapeStyle(.tint) : AnyShapeStyle(.tint.opacity(0.12)), in: Capsule())
+        .foregroundStyle(isIngredient ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
         .buttonStyle(.plain)
         .accessibilityLabel(ingredient.name.capitalized(with: .current))
     }
@@ -254,6 +270,7 @@ private struct IngredientRow: View {
     let onToggle: () -> Void
     let onSelect: (Variety?) -> Void
     let onHide: () -> Void
+    let onHideVariety: (Variety) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -290,6 +307,8 @@ private struct IngredientRow: View {
                         ForEach(varieties, id: \.persistentModelID) { variety in
                             IngredientChip(ingredient: variety) {
                                 onSelect(variety)
+                            } onHide: {
+                                onHideVariety(variety)
                             }
                         }
                         if isGenerating {

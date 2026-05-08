@@ -38,6 +38,7 @@ if something { code here }
 ## Git
 
 - The first line of a commit should be no more than 72 characters.
+- Never commit unless the user asks you to, even if they asked you to make a commit at an earlier point in a conversation.
 
 <skills_system priority="1">
 
