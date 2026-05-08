@@ -64,9 +64,24 @@ protocol IngredientContainer {
     func addContained(_ contained: some IngredientVariation)
 }
 
-/// Can base ingredient or a variety
+enum IngredientVisibility: String {
+    case shown
+    case hidden
+}
+
+/// A base ingredient or a variety
 protocol IngredientVariation {
     var name: String { get set }
+    var visibilityState: String { get set }
+    var isHidden: Bool { get }
+}
+
+extension IngredientVariation {
+    var visibility: IngredientVisibility {
+        get { IngredientVisibility(rawValue: visibilityState) ?? .shown }
+        set { visibilityState = newValue.rawValue }
+    }
+    var isHidden: Bool { visibility == .hidden }
 }
 
 // MARK: - FoodGroup
@@ -210,6 +225,8 @@ extension SchemaV1 {
         var name: String = "Food"
         var isRegional: Bool = true
         
+        var visibilityState: String = IngredientVisibility.shown.rawValue
+        
         @Relationship(deleteRule: .cascade, inverse: \Variety.ingredient)
         var varieties: [Variety]?
         
@@ -287,6 +304,8 @@ extension SchemaV1 {
         
         var name: String = "Some Food"
         var isRegional: Bool = true
+        
+        var visibilityState: String = IngredientVisibility.shown.rawValue
         
         // The difference between these two properties is
         // that the Ingredient is part of the food "databank"
