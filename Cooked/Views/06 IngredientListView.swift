@@ -44,7 +44,8 @@ struct IngredientListView: View {
                 .padding(.vertical, 10)
             List {
                 if let foodGroup = selectedFoodGroup {
-                    ForEach(foodGroup.ingredients?.filter { !$0.isHidden }.sorted() ?? [], id: \.persistentModelID) { ingredient in
+                    let ingredients = foodGroup.ingredients?.filter { !$0.isHidden }.sorted() ?? []
+                    ForEach(Array(ingredients.enumerated()), id: \.element.persistentModelID) { index, ingredient in
                         IngredientRow(
                             ingredient: ingredient,
                             isExpanded: expandedIngredients.contains(ingredient.persistentModelID),
@@ -54,6 +55,8 @@ struct IngredientListView: View {
                             onHide: { hideIngredient(ingredient) },
                             onHideVariety: { variety in hideVariety(variety) }
                         )
+                        .listRowSeparator(index == 0 ? .hidden : .visible, edges: .top)
+                        .listRowSeparator(index == ingredients.count - 1 ? .hidden : .visible, edges: .bottom)
                     }
                 }
             }
