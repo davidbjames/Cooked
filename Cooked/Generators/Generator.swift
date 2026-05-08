@@ -23,7 +23,7 @@ class Generator {
         var token: GenerationToken = .init()
         var debug: Bool {
             #if DEBUG
-            false
+            true
             #else
             false
             #endif

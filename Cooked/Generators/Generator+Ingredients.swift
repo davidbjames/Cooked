@@ -52,6 +52,7 @@ extension Generator {
             }
             
             if response.content.hasPrefix("000") {
+                // Handle error response 000000..
                 switch settings.kind {
                 case .ingredients:
                     break // TBD
@@ -172,6 +173,15 @@ extension Generator {
                     throw error
                 } catch {
                     print("OTHER ERROR", error)
+                }
+            }
+            switch settings.kind {
+            case .ingredients:
+                break
+            case .varieties:
+                if container.isEmpty {
+                    let variety = Variety(name: container.name, isRegional: true)
+                    container.addContained(variety)
                 }
             }
             

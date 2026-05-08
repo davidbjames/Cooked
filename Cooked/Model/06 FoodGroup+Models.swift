@@ -57,11 +57,19 @@ struct GeneratedVariety: Equatable {
 /// A food group or ingredient that contains ingredients or varieties, respectively
 protocol IngredientContainer {
     var name: String { get set }
+    var containedCount: Int { get }
+    var isEmpty: Bool { get }
     func getFoodGroup() -> FoodGroup.Group
     func getContainedNames() -> [String]
     func containsName(_ name: String) -> Bool
     func makeGenerationSettings() -> IngredientGenerationSettings
     func addContained(_ contained: some IngredientVariation)
+}
+
+extension IngredientContainer {
+    var isEmpty: Bool {
+        containedCount == 0
+    }
 }
 
 enum IngredientVisibility: String {
@@ -183,6 +191,9 @@ extension FoodGroup {
 
 extension FoodGroup: IngredientContainer {
     
+    var containedCount: Int {
+        ingredients?.count ?? 0
+    }
     func getFoodGroup() -> Group {
         group
     }
@@ -254,6 +265,9 @@ extension Ingredient {
 
 extension Ingredient: IngredientContainer {
     
+    var containedCount: Int {
+        varieties?.count ?? 0
+    }
     func getFoodGroup() -> FoodGroup.Group {
         foodGroup?.group ?? .staple
     }
