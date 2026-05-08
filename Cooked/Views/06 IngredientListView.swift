@@ -58,6 +58,7 @@ struct IngredientListView: View {
                 }
             }
         }
+        .listStyle(.plain)
         .navigationTitle("Ingredients")
         .task(id: selectedGroup) {
             let oldToken = generator.token
@@ -321,6 +322,7 @@ private struct IngredientRow: View {
             }
         }
         .padding(.vertical, 2)
+        .listRowInsets(EdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32))
         .swipeActions(edge: .trailing) {
             Button(role: .destructive, action: onHide) {
                 Label("Hide", systemImage: "eye.slash")
@@ -329,4 +331,17 @@ private struct IngredientRow: View {
     }
 }
 
-
+struct IngredientRow_Previews: PreviewProvider {
+    static var previews: some View {
+        IngredientRow(
+            ingredient: Ingredient(name: "Potato", isRegional: false),
+            isExpanded: true,
+            isGenerating: false,
+            onToggle: {},
+            onSelect: { _ in },
+            onHide: {},
+            onHideVariety: { _ in }
+        )
+        .previewLayout(.sizeThatFits)
+    }
+}
