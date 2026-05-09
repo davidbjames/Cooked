@@ -40,6 +40,10 @@ if something { code here }
 - The first line of a commit should be no more than 72 characters.
 - Never commit unless the user asks you to, even if they asked you to make a commit at an earlier point in a conversation.
 
+## Errors
+
+- If you see this build error "The compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions" always assume a syntax error and find that problem rather than actually breaking up the expression as the error advises. This is a common Xcode error when it can't see the real problem.
+
 <skills_system priority="1">
 
 ## Available Skills

@@ -26,7 +26,17 @@ struct IngredientListView: View {
     @State private var varietyGenerationToken: Generator.GenerationToken?
     @State private var selectedGroup: FoodGroup.Group = .staple
     
+    @State private var editMode: EditMode = .inactive
+    @State private var selectedIDs: Set<PersistentIdentifier> = []
+    @State private var displayedIngredients: [Ingredient] = []
+    
+    private var isEditing: Bool {
+        get { editMode.isEditing }
+        nonmutating set { editMode = newValue ? .active : .inactive }
+    }
+    
     @AppStorage("ingredientListNoteDismissed") private var ingredientListNoteDismissed = false
+    @AppStorage("ingredientOrderCustomised") private var ingredientOrderCustomised = false
     
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
         _selectedFood = selectedFood
@@ -39,24 +49,44 @@ struct IngredientListView: View {
         generator.foodGroups.first { $0.group == selectedGroup }
     }
     
+    private func sortedIngredients(for foodGroup: FoodGroup) -> [Ingredient] {
+        let visible = foodGroup.ingredients?.filter { !$0.isHidden } ?? []
+        if ingredientOrderCustomised {
+            return visible.sorted { $0.sortOrder < $1.sortOrder }
+        } else {
+            return visible.sorted()
+        }
+    }
+    
+    private func refreshDisplayedIngredients() {
+        guard let foodGroup = selectedFoodGroup else {
+            displayedIngredients = []
+            return
+        }
+        displayedIngredients = sortedIngredients(for: foodGroup)
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
-            FoodGroupPicker(selectedGroup: $selectedGroup, generatingGroup: generator.generatingGroup)
-                .padding(.horizontal)
-                .padding(.vertical, 10)
-            List {
-                if !ingredientListNoteDismissed {
+            if !isEditing {
+                FoodGroupPicker(selectedGroup: $selectedGroup, generatingGroup: generator.generatingGroup)
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+            }
+            List(selection: isEditing ? $selectedIDs : .constant(Set<PersistentIdentifier>())) {
+                if !isEditing && !ingredientListNoteDismissed {
                     IngredientListNote(isDismissed: $ingredientListNoteDismissed)
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 8, leading: 32, bottom: 8, trailing: 32))
                 }
                 if let foodGroup = selectedFoodGroup {
-                    let ingredients = foodGroup.ingredients?.filter { !$0.isHidden }.sorted() ?? []
+                    let ingredients = displayedIngredients
                     ForEach(Array(ingredients.enumerated()), id: \.element.persistentModelID) { index, ingredient in
                         IngredientRow(
                             ingredient: ingredient,
                             isExpanded: expandedIngredients.contains(ingredient.persistentModelID),
                             isGenerating: generatingVarieties.contains(ingredient.persistentModelID),
+                            isEditMode: isEditing,
                             onToggle: { toggleExpanded(ingredient) },
                             onSelect: { variety in selectVariety(variety, ingredient: ingredient, group: foodGroup) },
                             onHide: { hideIngredient(ingredient) },
@@ -64,12 +94,51 @@ struct IngredientListView: View {
                         )
                         .listRowSeparator(index == 0 ? .hidden : .visible, edges: .top)
                         .listRowSeparator(index == ingredients.count - 1 ? .hidden : .visible, edges: .bottom)
+                        .tag(ingredient.persistentModelID)
+                    }
+                    .onMove { source, destination in
+                        moveIngredients(from: source, to: destination)
+                    }
+                }
+            }
+            .environment(\.editMode, $editMode)
+        }
+        .listStyle(.plain)
+        .navigationTitle("Ingredients")
+        .onAppear {
+            refreshDisplayedIngredients()
+        }
+        .onChange(of: selectedGroup) {
+            refreshDisplayedIngredients()
+        }
+        .onChange(of: selectedFoodGroup?.ingredients?.count) {
+            refreshDisplayedIngredients()
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if isEditing {
+                    HStack {
+                        Button("Hide Selected") {
+                            hideSelected()
+                        }
+                        .disabled(selectedIDs.isEmpty)
+                        Button("Done") {
+                            withAnimation {
+                                isEditing = false
+                                selectedIDs = []
+                            }
+                        }
+                    }
+                } else {
+                    Button("Edit") {
+                        cancelCurrentGeneration()
+                        withAnimation {
+                            isEditing = true
+                        }
                     }
                 }
             }
         }
-        .listStyle(.plain)
-        .navigationTitle("Ingredients")
         .task(id: selectedGroup) {
             let oldToken = generator.token
             generator.token = Generator.GenerationToken()
@@ -153,6 +222,32 @@ struct IngredientListView: View {
     
     private func hideVariety(_ variety: Variety) {
         variety.visibilityState = IngredientVisibility.hidden.rawValue
+    }
+    
+    private func hideSelected() {
+        for ingredient in displayedIngredients where selectedIDs.contains(ingredient.persistentModelID) {
+            hideIngredient(ingredient)
+        }
+        withAnimation {
+            selectedIDs = []
+            isEditing = false
+        }
+    }
+    
+    private func moveIngredients(from source: IndexSet, to destination: Int) {
+        displayedIngredients.move(fromOffsets: source, toOffset: destination)
+        for (index, ingredient) in displayedIngredients.enumerated() {
+            ingredient.sortOrder = index
+        }
+        ingredientOrderCustomised = true
+    }
+    
+    private func cancelCurrentGeneration() {
+        ingredientGenerationToken.isCancelled = true
+        generator.token.isCancelled = true
+        varietyGenerationToken?.isCancelled = true
+        generatingVarieties.removeAll()
+        expandedIngredients.removeAll()
     }
     
     private func selectVariety(_ variety: Variety?, ingredient: Ingredient, group: FoodGroup) {
@@ -310,6 +405,7 @@ private struct IngredientRow: View {
     let ingredient: Ingredient
     let isExpanded: Bool
     let isGenerating: Bool
+    let isEditMode: Bool
     let onToggle: () -> Void
     let onSelect: (Variety?) -> Void
     let onHide: () -> Void
@@ -317,28 +413,32 @@ private struct IngredientRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Ingredient header — tapping expands/collapses varieties
-            Button(action: onToggle) {
+            // Ingredient header — tapping expands/collapses varieties (normal mode only)
+            Button(action: isEditMode ? {} : onToggle) {
                 HStack {
                     Text(ingredient.name.capitalized(with: .current))
                         .foregroundStyle(.primary)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                        .animation(.easeInOut(duration: 0.2), value: isExpanded)
+                    if !isEditMode {
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                            .animation(.easeInOut(duration: 0.2), value: isExpanded)
+                    }
                 }
-                .contentShape(Rectangle()) // entire row is tappable to expand ingredient
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(
-                isExpanded
-                    ? "Collapse \(ingredient.name.capitalized(with: .current))"
-                    : "Expand \(ingredient.name.capitalized(with: .current))"
+                isEditMode
+                    ? ingredient.name.capitalized(with: .current)
+                    : isExpanded
+                        ? "Collapse \(ingredient.name.capitalized(with: .current))"
+                        : "Expand \(ingredient.name.capitalized(with: .current))"
             )
             .accessibilityAddTraits(.isButton)
 
-            if isExpanded {
+            if !isEditMode && isExpanded {
                 // Unlike ingredients, varieties are not sorted so the
                 // generating items remain stable for selection.
                 let varieties = ingredient.varieties?.filter { !$0.isHidden } ?? []
@@ -363,11 +463,13 @@ private struct IngredientRow: View {
                 }
             }
         }
-        .padding(.vertical, isExpanded ? 10 : 2)
+        .padding(.vertical, isExpanded && !isEditMode ? 10 : 2)
         .listRowInsets(EdgeInsets(top: 0, leading: 32, bottom: 0, trailing: 32))
         .swipeActions(edge: .trailing) {
-            Button(role: .destructive, action: onHide) {
-                Label("Hide", systemImage: "eye.slash")
+            if !isEditMode {
+                Button(role: .destructive, action: onHide) {
+                    Label("Hide", systemImage: "eye.slash")
+                }
             }
         }
     }
@@ -379,6 +481,7 @@ struct IngredientRow_Previews: PreviewProvider {
             ingredient: Ingredient(name: "Potato", isRegional: false),
             isExpanded: true,
             isGenerating: false,
+            isEditMode: false,
             onToggle: {},
             onSelect: { _ in },
             onHide: {},

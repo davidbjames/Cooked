@@ -235,6 +235,7 @@ extension SchemaV1 {
         
         var name: String = "Food"
         var isRegional: Bool = true
+        var sortOrder: Int = 0
         
         var visibilityState: String = IngredientVisibility.shown.rawValue
         
