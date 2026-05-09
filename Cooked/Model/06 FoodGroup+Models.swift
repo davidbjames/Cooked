@@ -260,6 +260,10 @@ extension SchemaV1 {
 
 extension Ingredient {
     
+    var isUsed: Bool {
+        !(foodItems?.isEmpty ?? true)
+    }
+    
     func addVariety(_ variety: Variety) {
         if varieties == nil {
             varieties = []

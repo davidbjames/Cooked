@@ -419,6 +419,7 @@ private struct IngredientRow: View {
                 HStack {
                     Text(ingredient.name.capitalized(with: .current))
                         .foregroundStyle(.primary)
+                        .fontWeight(ingredient.isUsed ? .bold : .regular)
                     Spacer()
                     if !isEditMode {
                         Image(systemName: "chevron.right")
