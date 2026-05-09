@@ -273,7 +273,7 @@ private struct IngredientListNote: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            Text("Note: ingredients and varieties are generated from on-device AI. Results may vary. Tap an ingredient to see varieties. Tap variety to select. Swipe ingredients or hide varieties so they don't appear again.")
+            Text("Note: ingredients and varieties are generated from on-device AI. Results may vary. Tap an ingredient to see varieties. Tap variety to select. Swipe ingredients or hide varieties so they don't appear again. Edit to hide or re-order.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -440,6 +440,12 @@ private struct IngredientRow: View {
             .accessibilityAddTraits(.isButton)
 
             if !isEditMode && isExpanded {
+                if !ingredient.about.isEmpty {
+                    Text(ingredient.about)
+                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                        .padding(.leading, 16)
+                }
                 // Unlike ingredients, varieties are not sorted so the
                 // generating items remain stable for selection.
                 let varieties = ingredient.varieties?.filter { !$0.isHidden } ?? []
