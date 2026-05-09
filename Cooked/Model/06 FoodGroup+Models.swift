@@ -234,7 +234,9 @@ extension SchemaV1 {
     final class Ingredient {
         
         var name: String = "Food"
+        var about: String = ""
         var isRegional: Bool = true
+        
         var sortOrder: Int = 0
         
         var visibilityState: String = IngredientVisibility.shown.rawValue
@@ -248,8 +250,10 @@ extension SchemaV1 {
         @Relationship
         var foodItems: [FoodItem]?
         
-        init(name: String, isRegional: Bool) {
+        init(name: String, about: String = "", isRegional: Bool) {
             self.name = name
+            self.about = about
+            self.isRegional = isRegional
         }
     }
 }

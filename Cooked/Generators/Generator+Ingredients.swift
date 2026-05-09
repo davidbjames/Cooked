@@ -153,7 +153,18 @@ extension Generator {
                     }
                     switch settings.kind {
                     case .ingredients:
-                        let ingredient = Ingredient(name: line, isRegional: isRegional.content)
+                        let descriptionResponse = try await auditSession.respond(
+                            to: "Give a one-sentence description of '\(line)' as a food ingredient.",
+                            generating: String.self
+                        )
+                        if token.isCancelled {
+                            throw GeneratorError.cancelled
+                        }
+                        let about = descriptionResponse.content
+                        if debug {
+                            print(line, "description:", about)
+                        }
+                        let ingredient = Ingredient(name: line, about: about, isRegional: isRegional.content)
                         container.addContained(ingredient)
                         // Save immediately so this Ingredient gets a permanent PersistentIdentifier.
                         // There was a problem in IngredientListView which uses these identifiers
