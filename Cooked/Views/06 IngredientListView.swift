@@ -448,9 +448,8 @@ private struct IngredientRow: View {
                         .font(.footnote)
                         .padding(.leading, 16)
                 }
-                // Unlike ingredients, varieties are not sorted so the
-                // generating items remain stable for selection.
-                let varieties = ingredient.varieties?.filter { !$0.isHidden } ?? []
+                let visible = ingredient.varieties?.filter { !$0.isHidden } ?? []
+                let varieties = visible.filter { $0.isUsed } + visible.filter { !$0.isUsed }
                 if !varieties.isEmpty || isGenerating {
                     FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
                         IngredientChip(ingredient: ingredient) {
