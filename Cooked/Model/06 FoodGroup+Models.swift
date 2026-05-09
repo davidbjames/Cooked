@@ -82,6 +82,7 @@ protocol IngredientVariation {
     var name: String { get set }
     var visibilityState: String { get set }
     var isHidden: Bool { get }
+    var isUsed: Bool { get }
 }
 
 extension IngredientVariation {
@@ -351,6 +352,10 @@ extension SchemaV1 {
 }
 
 extension Variety {
+    
+    var isUsed: Bool {
+        !(foodItems?.isEmpty ?? true)
+    }
     
     func setName(_ name: String) {
         self.name = name

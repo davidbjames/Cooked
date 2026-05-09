@@ -380,6 +380,7 @@ private struct IngredientChip<Variation: IngredientVariation>: View {
             Button(action: onSelect) {
                 Text(ingredient.name.capitalized(with: .current))
                     .font(.subheadline)
+                    .fontWeight(ingredient.isUsed ? .bold : .regular)
             }
             if !isIngredient, let onHide {
                 Button(action: onHide) {
