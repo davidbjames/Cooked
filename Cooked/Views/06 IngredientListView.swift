@@ -228,6 +228,7 @@ struct IngredientListView: View {
         for ingredient in displayedIngredients where selectedIDs.contains(ingredient.persistentModelID) {
             hideIngredient(ingredient)
         }
+        refreshDisplayedIngredients()
         withAnimation {
             selectedIDs = []
             isEditing = false
