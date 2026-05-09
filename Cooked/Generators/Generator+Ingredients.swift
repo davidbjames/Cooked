@@ -190,6 +190,8 @@ extension Generator {
             case .ingredients:
                 break
             case .varieties:
+                // If there are still no varieties, add the base ingredient
+                // as a variety so the list is not empty.
                 if container.isEmpty {
                     let variety = Variety(name: container.name, isRegional: true)
                     container.addContained(variety)
