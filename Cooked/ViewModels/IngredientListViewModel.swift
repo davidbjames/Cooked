@@ -87,24 +87,7 @@ final class IngredientListViewModel {
                 return
             }
             Task {
-                do {
-                    if varietyGenerationToken == nil {
-                        varietyGenerationToken = .init()
-                    }
-                    let varietyGenerator = try VarietyGenerator(
-                        ingredient: ingredient,
-                        modelContext: modelContext,
-                        token: varietyGenerationToken!
-                    )
-                    generatingVarieties.insert(id)
-                    try await varietyGenerator.generate()
-                    generatingVarieties.remove(id)
-                } catch let error as GeneratorError {
-                    generatingVarieties.remove(id)
-                    generatorError = error
-                } catch {
-                    generatingVarieties.remove(id)
-                }
+                await runVarietyGeneration(for: ingredient)
             }
         }
     }
@@ -177,6 +160,28 @@ final class IngredientListViewModel {
             try await generator.generate(group: selectedGroup)
         } catch {
             generatorError = error
+        }
+    }
+
+    func runVarietyGeneration(for ingredient: Ingredient) async {
+        let id = ingredient.persistentModelID
+        do {
+            if varietyGenerationToken == nil {
+                varietyGenerationToken = .init()
+            }
+            let varietyGenerator = try VarietyGenerator(
+                ingredient: ingredient,
+                modelContext: modelContext,
+                token: varietyGenerationToken!
+            )
+            generatingVarieties.insert(id)
+            try await varietyGenerator.generate()
+            generatingVarieties.remove(id)
+        } catch let error as GeneratorError {
+            generatingVarieties.remove(id)
+            generatorError = error
+        } catch {
+            generatingVarieties.remove(id)
         }
     }
 }
