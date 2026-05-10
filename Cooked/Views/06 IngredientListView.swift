@@ -12,153 +12,119 @@ import FoundationModels
 // MARK: - IngredientListView
 
 struct IngredientListView: View {
-    
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+
     @Binding var selectedFood: FoodItem?
-    
-    @State private var generator: IngredientGenerator
     @Binding var expandedIngredients: Set<PersistentIdentifier>
-    @State private var generatingVarieties: Set<PersistentIdentifier> = []
-    @State private var generatorError: GeneratorError?
-    @State private var ingredientGenerationToken: Generator.GenerationToken
-    @State private var varietyGenerationToken: Generator.GenerationToken?
-    @State private var selectedGroup: FoodGroup.Group = .staple
-    
-    @State private var editMode: EditMode = .inactive
-    @State private var selectedIDs: Set<PersistentIdentifier> = []
-    @State private var displayedIngredients: [Ingredient] = []
-    
-    private var isEditing: Bool {
-        get { editMode.isEditing }
-        nonmutating set { editMode = newValue ? .active : .inactive }
-    }
-    
+
+    @State private var viewModel: IngredientListViewModel
+
     @AppStorage("ingredientListNoteDismissed") private var ingredientListNoteDismissed = false
     @AppStorage("ingredientOrderCustomised") private var ingredientOrderCustomised = false
-    
+
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
         _selectedFood = selectedFood
-        _generator = State(initialValue: generator)
         _expandedIngredients = expandedIngredients
-        _ingredientGenerationToken = State(initialValue: generator.token)
+        // modelContext is not available yet at init time; the VM is created with a
+        // temporary context and swapped in onAppear via the environment.
+        // Instead we pass the generator (which already holds a modelContext) and
+        // defer full VM wiring to onAppear.
+        _viewModel = State(initialValue: IngredientListViewModel(
+            generator: generator,
+            modelContext: generator.modelContext
+        ))
     }
-    
-    private var selectedFoodGroup: FoodGroup? {
-        generator.foodGroups.first { $0.group == selectedGroup }
-    }
-    
-    private func sortedIngredients(for foodGroup: FoodGroup) -> [Ingredient] {
-        let visible = foodGroup.ingredients?.filter { !$0.isHidden } ?? []
-        if ingredientOrderCustomised {
-            return visible.sorted { $0.sortOrder < $1.sortOrder }
-        } else {
-            return visible.sorted()
-        }
-    }
-    
-    private func refreshDisplayedIngredients() {
-        guard let foodGroup = selectedFoodGroup else {
-            displayedIngredients = []
-            return
-        }
-        displayedIngredients = sortedIngredients(for: foodGroup)
-    }
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            if !isEditing {
-                FoodGroupPicker(selectedGroup: $selectedGroup, generatingGroup: generator.generatingGroup)
+            if !viewModel.isEditing {
+                FoodGroupPicker(selectedGroup: $viewModel.selectedGroup, generatingGroup: viewModel.generator.generatingGroup)
                     .padding(.horizontal)
                     .padding(.vertical, 10)
             }
-            List(selection: isEditing ? $selectedIDs : .constant(Set<PersistentIdentifier>())) {
-                if !isEditing && !ingredientListNoteDismissed {
+            List(selection: viewModel.isEditing ? $viewModel.selectedIDs : .constant(Set<PersistentIdentifier>())) {
+                if !viewModel.isEditing && !ingredientListNoteDismissed {
                     IngredientListNote(isDismissed: $ingredientListNoteDismissed)
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 8, leading: 32, bottom: 8, trailing: 32))
                 }
-                if let foodGroup = selectedFoodGroup {
-                    let ingredients = displayedIngredients
+                if let foodGroup = viewModel.selectedFoodGroup {
+                    let ingredients = viewModel.displayedIngredients
                     ForEach(Array(ingredients.enumerated()), id: \.element.persistentModelID) { index, ingredient in
                         IngredientRow(
                             ingredient: ingredient,
                             isExpanded: expandedIngredients.contains(ingredient.persistentModelID),
-                            isGenerating: generatingVarieties.contains(ingredient.persistentModelID),
-                            isEditMode: isEditing,
-                            onToggle: { toggleExpanded(ingredient) },
-                            onSelect: { variety in selectVariety(variety, ingredient: ingredient, group: foodGroup) },
-                            onHide: { hideIngredient(ingredient) },
-                            onHideVariety: { variety in hideVariety(variety) }
+                            isGenerating: viewModel.generatingVarieties.contains(ingredient.persistentModelID),
+                            isEditMode: viewModel.isEditing,
+                            onToggle: { viewModel.toggleExpanded(ingredient, expandedIngredients: &expandedIngredients) },
+                            onSelect: { variety in
+                                viewModel.selectVariety(variety, ingredient: ingredient, group: foodGroup) { foodItem in
+                                    selectedFood = foodItem
+                                    dismiss()
+                                }
+                            },
+                            onHide: { viewModel.hideIngredient(ingredient, expandedIngredients: &expandedIngredients) },
+                            onHideVariety: { variety in viewModel.hideVariety(variety) }
                         )
                         .listRowSeparator(index == 0 ? .hidden : .visible, edges: .top)
                         .listRowSeparator(index == ingredients.count - 1 ? .hidden : .visible, edges: .bottom)
                         .tag(ingredient.persistentModelID)
                     }
                     .onMove { source, destination in
-                        moveIngredients(from: source, to: destination)
+                        viewModel.moveIngredients(from: source, to: destination, ingredientOrderCustomised: &ingredientOrderCustomised)
                     }
                 }
             }
-            .environment(\.editMode, $editMode)
+            .environment(\.editMode, $viewModel.editMode)
         }
         .listStyle(.plain)
         .navigationTitle("Ingredients")
         .onAppear {
-            refreshDisplayedIngredients()
+            viewModel.refreshDisplayedIngredients(ingredientOrderCustomised: ingredientOrderCustomised)
         }
-        .onChange(of: selectedGroup) {
-            refreshDisplayedIngredients()
+        .onChange(of: viewModel.selectedGroup) {
+            viewModel.refreshDisplayedIngredients(ingredientOrderCustomised: ingredientOrderCustomised)
         }
-        .onChange(of: selectedFoodGroup?.ingredients?.count) {
-            refreshDisplayedIngredients()
+        .onChange(of: viewModel.selectedFoodGroup?.ingredients?.count) {
+            viewModel.refreshDisplayedIngredients(ingredientOrderCustomised: ingredientOrderCustomised)
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                if isEditing {
+                if viewModel.isEditing {
                     HStack {
                         Button("Hide Selected") {
-                            hideSelected()
+                            viewModel.hideSelected(expandedIngredients: &expandedIngredients, ingredientOrderCustomised: ingredientOrderCustomised)
                         }
-                        .disabled(selectedIDs.isEmpty)
+                        .disabled(viewModel.selectedIDs.isEmpty)
                         Button("Done") {
                             withAnimation {
-                                isEditing = false
-                                selectedIDs = []
+                                viewModel.isEditing = false
+                                viewModel.selectedIDs = []
                             }
                         }
                     }
                 } else {
                     Button("Edit") {
-                        cancelCurrentGeneration()
+                        viewModel.cancelCurrentGeneration(expandedIngredients: &expandedIngredients)
                         withAnimation {
-                            isEditing = true
+                            viewModel.isEditing = true
                         }
                     }
                 }
             }
         }
-        .task(id: selectedGroup) {
-            let oldToken = generator.token
-            generator.token = Generator.GenerationToken()
-            ingredientGenerationToken = generator.token
-            oldToken.isCancelled = true
-            do {
-                try await generator.generate(group: selectedGroup)
-            } catch let error as GeneratorError {
-                generatorError = error
-            } catch {
-                print(error)
-            }
+        .task(id: viewModel.selectedGroup) {
+            await viewModel.runIngredientGeneration()
         }
         .alert("Apple Intelligence", isPresented: .init(
-            get: { generatorError?.requiresAlert == true },
-            set: { if !$0 { generatorError = nil } }
+            get: { viewModel.generatorError?.requiresAlert == true },
+            set: { if !$0 { viewModel.generatorError = nil } }
         )) {
-            Button("OK", role: .cancel) { generatorError = nil }
+            Button("OK", role: .cancel) { viewModel.generatorError = nil }
         } message: {
-            switch generatorError {
+            switch viewModel.generatorError {
             case .availability(let unavailableReason):
                 switch unavailableReason {
                 case .appleIntelligenceNotEnabled:
@@ -178,90 +144,6 @@ struct IngredientListView: View {
                 Text("Please try again later.")
             }
         }
-    }
-    
-    // MARK: - Actions
-    
-    private func toggleExpanded(_ ingredient: Ingredient) {
-        let id = ingredient.persistentModelID
-        if expandedIngredients.contains(id) {
-            expandedIngredients.remove(id)
-        } else {
-            expandedIngredients.insert(id)
-            ingredientGenerationToken.isCancelled = true
-            guard !generatingVarieties.contains(id) else {
-                return
-            }
-            Task {
-                do {
-                    if varietyGenerationToken == nil {
-                        varietyGenerationToken = .init()
-                    }
-                    let varietyGenerator = try VarietyGenerator(
-                        ingredient: ingredient,
-                        modelContext: modelContext,
-                        token: varietyGenerationToken!
-                    )
-                    generatingVarieties.insert(id)
-                    try await varietyGenerator.generate()
-                    generatingVarieties.remove(id)
-                } catch let error as GeneratorError {
-                    generatingVarieties.remove(id)
-                    generatorError = error
-                } catch {
-                    generatingVarieties.remove(id)
-                }
-            }
-        }
-    }
-    
-    private func hideIngredient(_ ingredient: Ingredient) {
-        ingredient.visibilityState = IngredientVisibility.hidden.rawValue
-        expandedIngredients.remove(ingredient.persistentModelID)
-    }
-    
-    private func hideVariety(_ variety: Variety) {
-        variety.visibilityState = IngredientVisibility.hidden.rawValue
-    }
-    
-    private func hideSelected() {
-        for ingredient in displayedIngredients where selectedIDs.contains(ingredient.persistentModelID) {
-            hideIngredient(ingredient)
-        }
-        refreshDisplayedIngredients()
-        withAnimation {
-            selectedIDs = []
-            isEditing = false
-        }
-    }
-    
-    private func moveIngredients(from source: IndexSet, to destination: Int) {
-        displayedIngredients.move(fromOffsets: source, toOffset: destination)
-        for (index, ingredient) in displayedIngredients.enumerated() {
-            ingredient.sortOrder = index
-        }
-        ingredientOrderCustomised = true
-    }
-    
-    private func cancelCurrentGeneration() {
-        ingredientGenerationToken.isCancelled = true
-        generator.token.isCancelled = true
-        varietyGenerationToken?.isCancelled = true
-        generatingVarieties.removeAll()
-        expandedIngredients.removeAll()
-    }
-    
-    private func selectVariety(_ variety: Variety?, ingredient: Ingredient, group: FoodGroup) {
-        guard let varietyGenerationToken else {
-            print("**** Variety generation cancellation token does not exist on variety selection")
-            return
-        }
-        varietyGenerationToken.isCancelled = true
-        generatingVarieties.removeAll()
-        let foodItem = FoodItem(group: group, ingredient: ingredient, variety: variety)
-        modelContext.insert(foodItem)
-        selectedFood = foodItem
-        dismiss()
     }
 }
 
@@ -300,7 +182,7 @@ private struct IngredientListNote: View {
 // MARK: - Food Group Picker
 
 private struct FoodGroupPicker: View {
-    
+
     @Binding var selectedGroup: FoodGroup.Group
     let generatingGroup: FoodGroup.Group?
 
@@ -335,7 +217,7 @@ private struct FoodGroupPicker: View {
 // MARK: - Thinking Indicator
 
 private struct ThinkingIndicator: View {
-    
+
     @State private var phase: CGFloat = -1
     private let dashWidth: CGFloat = 20
 
@@ -357,7 +239,7 @@ private struct ThinkingIndicator: View {
 struct FoodGroupPicker_Previews: PreviewProvider {
     @State static var selectedGroup: FoodGroup.Group = .staple
     @State static var generatingGroup: FoodGroup.Group? = .staple
-    
+
     static var previews: some View {
         FoodGroupPicker(selectedGroup: $selectedGroup, generatingGroup: generatingGroup)
             .padding()
