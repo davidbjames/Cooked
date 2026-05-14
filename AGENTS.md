@@ -44,6 +44,10 @@ if something { code here }
 
 - If you see this build error "The compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions" always assume a syntax error and find that problem rather than actually breaking up the expression as the error advises. This is a common Xcode error when it can't see the real problem.
 
+## Models
+
+- To ensure we are working with the current schema version, always use existing model type aliases rather than the original model types, unless the user tells you to use a specific version.
+
 <skills_system priority="1">
 
 ## Available Skills
