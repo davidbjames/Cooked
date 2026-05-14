@@ -58,6 +58,18 @@ final class IngredientGenerator: Generator {
             if seen.insert(foodGroup.group).inserted {
                 foodGroups.append(foodGroup)
             } else {
+                // Transfer any ingredients not already in the winner before deleting,
+                // since the cascade delete rule would otherwise silently drop them.
+                let winner = foodGroups.first { $0.group == foodGroup.group }!
+                let existingNames = Set(winner.getContainedNames())
+                for ingredient in foodGroup.ingredients ?? [] {
+                    if !existingNames.contains(ingredient.name) {
+                        ingredient.foodGroup = winner   // re-parent the ingredient
+                        if debug {
+                            print("Re-parenting orphaned ingredient '\(ingredient.name)' to food group '\(foodGroup.name)' (before deleting duplicate food group)")
+                        }
+                    }
+                }
                 modelContext.delete(foodGroup)
             }
         }
