@@ -139,7 +139,8 @@ final class IngredientGenerator: Generator {
                 "It is fine to include tomatoes, or other fruits that are commonly used as vegetables."
             }
             "Food names must always be lower cased."
-            "Food names MUST NOT be repeated in the list." // this doesn't actually work due to degenerate repetition problem
+            "Food names MUST NOT be repeated in the list. If you detect two successive and identical names, stop the generation immediately and return the results up to that point."
+            // this ^^ doesn't actually work due to degenerate repetition problem
             "Use the most common pluralization. For example, '\(group.examplePluralizedIngredient)' is commonly pluralized, but '\(group.exampleNonPluralizedIngredient)' is not. This is just an example. Follow this pattern."
             if !existingIngredients.isEmpty {
                 // LEARNING: use stronger wording so that instruction is honored
