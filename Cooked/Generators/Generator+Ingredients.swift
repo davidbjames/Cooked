@@ -74,19 +74,16 @@ extension Generator {
             // permissiveContentTransformations. It's either completely random
             // or overly restrictive.
             
-            let splitLines = response.content.split(separator: /\d+\.?|[,\n\-•*]+|\band\b/)
-            let trimmedLines = splitLines.map {
-                $0.trimmingCharacters(in: .whitespacesAndNewlines)
-                    .trimmingCharacters(in: .punctuationCharacters)
-                    .lowercased()
-            }
+            let parser = StringParser(strategy: DelimitedStringParsingStrategy())
+            let lines = parser.parseString(response.content)
+            
             if debug {
-                print("Responded with:", trimmedLines.count, "items")
+                print("Responded with:", lines.count, "items")
             }
             
             var degenerateDetector = makeDegenerateDetector()
             
-            for line in trimmedLines {
+            for line in lines {
                 
                 guard !line.isEmpty else {
                     continue
