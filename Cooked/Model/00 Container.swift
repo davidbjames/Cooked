@@ -27,6 +27,9 @@ import SwiftData
 // See Copilot CloudKit RecordName chat for more info on this...
 // (can also create versions and migration plans)
 
+// See also this article about versioning
+// https://azamsharp.com/2026/02/14/if-you-are-not-versioning-your-swiftdata-schema.html
+
 // MARK: - Schemas
 
 // This is not used yet, except as a namespace for the first schema version

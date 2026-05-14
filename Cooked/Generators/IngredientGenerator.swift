@@ -60,7 +60,9 @@ final class IngredientGenerator: Generator {
             } else {
                 // Transfer any ingredients not already in the winner before deleting,
                 // since the cascade delete rule would otherwise silently drop them.
-                let winner = foodGroups.first { $0.group == foodGroup.group }!
+                guard let winner = foodGroups.first(where: { $0.group == foodGroup.group }) else {
+                    continue
+                }
                 let existingNames = Set(winner.getContainedNames())
                 for ingredient in foodGroup.ingredients ?? [] {
                     if !existingNames.contains(ingredient.name) {
