@@ -82,16 +82,11 @@ struct ParsingTests {
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
-    /// Backticks are not classified as punctuation characters in Unicode, so
-    /// `trimmingCharacters(in: .punctuationCharacters)` does not strip them.
-    /// This test documents that known limitation.
-    @Test("Backtick-wrapped names are not stripped (known limitation)")
-    func backtickWrappedNamesAreNotStripped() {
-        withKnownIssue("Backticks are not Unicode punctuation; trimmingCharacters leaves them intact") {
-            let input = "`chicken`, `beef`, `tofu`, `salmon`"
-            let result = sut.parseString(input)
-            #expect(result == ["chicken", "beef", "tofu", "salmon"])
-        }
+    @Test("Backtick-wrapped names are stripped")
+    func backtickWrappedNamesAreStripped() {
+        let input = "`chicken`, `beef`, `tofu`, `salmon`"
+        let result = sut.parseString(input)
+        #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
     // MARK: - Casing & whitespace

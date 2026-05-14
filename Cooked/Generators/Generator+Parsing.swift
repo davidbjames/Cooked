@@ -24,6 +24,7 @@ struct DelimitedStringParsingStrategy: StringParsingStrategy {
         substrings.map {
             $0.trimmingCharacters(in: .whitespacesAndNewlines)
                 .trimmingCharacters(in: .punctuationCharacters)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "`"))
                 .lowercased()
         }
     }
