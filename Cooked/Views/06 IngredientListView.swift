@@ -52,7 +52,13 @@ struct IngredientListView: View {
                 }
                 if let foodGroup = viewModel.selectedFoodGroup {
                     let ingredients = viewModel.displayedIngredients
-                    ForEach(Array(ingredients.enumerated()), id: \.element.persistentModelID) { index, ingredient in
+                    ForEach(
+                        Array(ingredients.positionEnumerated()),
+                        // Even though PersistentModel is already Identifiable
+                        // we must manually specify the list identifier because
+                        // of the enumerated tuple ^.
+                        id: \.element.persistentModelID
+                    ) { position, ingredient in
                         IngredientRow(
                             ingredient: ingredient,
                             isExpanded: expandedIngredients.contains(ingredient.persistentModelID),
@@ -68,8 +74,8 @@ struct IngredientListView: View {
                             onHide: { viewModel.hideIngredient(ingredient, expandedIngredients: &expandedIngredients) },
                             onHideVariety: { variety in viewModel.hideVariety(variety) }
                         )
-                        .listRowSeparator(index == 0 ? .hidden : .visible, edges: .top)
-                        .listRowSeparator(index == ingredients.count - 1 ? .hidden : .visible, edges: .bottom)
+                        .listRowSeparator(position.isStart ? .hidden : .visible, edges: .top)
+                        .listRowSeparator(position.isEnd ? .hidden : .visible, edges: .bottom)
                         .tag(ingredient.persistentModelID)
                     }
                     .onMove { source, destination in
