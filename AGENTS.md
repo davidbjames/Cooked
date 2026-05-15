@@ -16,7 +16,12 @@ if something {
 if something { code here }
 ```
 
-- Always use a protocol default implementation extension if the functionality can be put there, in order to avoid redundancy in conforming types.
+- Prefer putting protocol functionality in an extension of the protocol as a default implementation if possible.
+
+## Documentation
+
+- Documentation on types, methods and properties should be as concise as possible, preferrably on one line. If further details are needed to understand the broader purpose (the "why"), add a blank line followed by that information. This additional information should also be as concise as possible.
+- Documentation should use back ticks for types.
 
 ## MCP Servers
 

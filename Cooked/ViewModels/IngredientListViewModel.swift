@@ -23,19 +23,58 @@ final class IngredientListViewModel {
     // You would use @ObservationIgnored only with *vars* you don't want observed.
     
     let generator: IngredientGenerator
+    
     let modelContext: ModelContext
 
     // MARK: - State
 
+    /// Snapshot of the visible, sorted ingredients.
+    ///
+    /// This "stable array" drives the `ForEach` and `.onMove()`.
+    /// It is _manually maintained and refreshed_ on food group change,
+    /// `ingredients` count change and any "bulk" operation (hiding/moving).
     var displayedIngredients: [Ingredient] = []
+    
+    /// The current food group "picker".
+    ///
+    /// Changing this triggers a new ingredient generation task via `.task(id:)`.
     var selectedGroup: FoodGroup.Group = .staple
+    
+    /// Tracks edit mode (reorder and hiding).
+    ///
+    /// Bound to List via `\.editMode` for selection and drag handle activation.
     var editMode: EditMode = .inactive
+    
+    /// Selected edit mode ingredients.
+    ///
+    /// Passed as the List `selection` binding so multi-select is handled
+    /// natively; cleared when edit mode exits or "Hide Selected" is invoked.
     var selectedIDs: Set<PersistentIdentifier> = []
+    
+    /// Ingredients (ids) currently generating varieties.
+    ///
+    /// Used by each `IngredientRow` to show a `ProgressView` spinner while
+    /// generated varieties are streamed for that ingredient.
     var generatingVarieties: Set<PersistentIdentifier> = []
+    
+    /// The last error surfaced by either the ingredient or variety generator.
+    ///
+    /// May trigger an "Apple Intelligence" alert.
     var generatorError: GeneratorError?
+    
+    /// Cancellation token for the current ingredient generation task.
+    ///
+    /// Replaced with a fresh token each time generation starts so that
+    /// stale streaming responses from a previous group are silently dropped.
     var ingredientGenerationToken: Generator.GenerationToken
+    
+    /// Cancellation token for the current variety-generation task.
+    ///
+    /// A single shared token is reused across sequential variety requests
+    /// and cancelled whenever the user collapses a row, taps a variety,
+    /// or enters edit mode.
     var varietyGenerationToken: Generator.GenerationToken?
-
+    
     // MARK: - Init
 
     init(generator: IngredientGenerator, modelContext: ModelContext) {
