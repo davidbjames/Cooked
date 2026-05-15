@@ -44,6 +44,8 @@ struct ParsingTests {
         ]
     )
     func delimiterVariantsProduceSameIngredients(input: String) {
+        // LEARNING: this test is called once for each element
+        // in the arguments collection ^.
         let result = sut.parseString(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
