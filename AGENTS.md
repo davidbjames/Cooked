@@ -17,11 +17,20 @@ if something { code here }
 ```
 
 - Prefer putting protocol functionality in an extension of the protocol as a default implementation if possible.
+- Any time we declare a tuple type, make sure to add logical tuple label names, unless directed otherwise. Example:
+
+```swift
+// Good
+func doFoo() -> (foo: String, bar: Int)
+// Bad
+func doFoo() -> (String, Int)
+```
 
 ## Documentation
 
 - Documentation on types, methods and properties should be as concise as possible, preferrably on one line. If further details are needed to understand the broader purpose (the "why"), add a blank line followed by that information. This additional information should also be as concise as possible.
 - Documentation should use back ticks for types.
+- These documentation instructions should override any conflicting ones found in the swift-api-design-guidelines-skill skill.
 
 ## MCP Servers
 
