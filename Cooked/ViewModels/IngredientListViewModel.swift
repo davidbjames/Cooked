@@ -94,6 +94,11 @@ final class IngredientListViewModel {
         generator.foodGroups.first { $0.group == selectedGroup }
     }
     
+    /// Whether any ingredient generation is currently in progress.
+    var isGenerating: Bool {
+        generator.generatingGroup != nil
+    }
+
     /// Whether the current food group is sorted alphabetically.
     var isAlphabetical: Bool {
         selectedFoodGroup?.order == .alphabetical

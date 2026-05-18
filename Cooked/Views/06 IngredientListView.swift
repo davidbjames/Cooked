@@ -117,7 +117,7 @@ struct IngredientListView: View {
                         } label: {
                             Image(systemName: "textformat.characters")
                         }
-                        .disabled(viewModel.isAlphabetical || viewModel.generator.generatingGroup != nil)
+                        .disabled(viewModel.isAlphabetical || viewModel.isGenerating)
                         Button("Edit") {
                             viewModel.cancelCurrentGeneration(expandedIngredients: &expandedIngredients)
                             withAnimation {
