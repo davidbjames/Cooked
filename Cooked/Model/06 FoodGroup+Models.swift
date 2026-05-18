@@ -102,6 +102,8 @@ extension SchemaV1 {
         
         var name: String = Group.staple.rawValue
         
+        var ingredientOrder: Int = IngredientOrder.stable.rawValue
+        
         @Relationship(deleteRule: .cascade, inverse: \Ingredient.foodGroup)
         var ingredients: [Ingredient]?
         
@@ -115,6 +117,15 @@ extension SchemaV1 {
 }
 
 extension FoodGroup {
+    
+    enum IngredientOrder: Int, Codable {
+        /// Insertion order — ingredients appear in the order they were added.
+        case stable
+        /// Alphabetical order — sorted by name ascending.
+        case alphabetical
+        /// User-defined order — sorted by each ingredient's `sortOrder` value.
+        case custom
+    }
     
     enum Group: String, Hashable, Codable, CaseIterable {
         case staple
@@ -175,6 +186,11 @@ extension FoodGroup {
     var group: Group {
         get { Group(rawValue: name)! }
         set { name = newValue.rawValue }
+    }
+    
+    var order: IngredientOrder {
+        get { IngredientOrder(rawValue: ingredientOrder) ?? .stable }
+        set { ingredientOrder = newValue.rawValue }
     }
     
     func addIngredient(_ ingredient: Ingredient) {

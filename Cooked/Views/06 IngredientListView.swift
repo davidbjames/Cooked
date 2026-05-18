@@ -22,7 +22,6 @@ struct IngredientListView: View {
     @State private var viewModel: IngredientListViewModel
 
     @AppStorage("ingredientListNoteDismissed") private var ingredientListNoteDismissed = false
-    @AppStorage("ingredientOrderCustomised") private var ingredientOrderCustomised = false
 
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
         _selectedFood = selectedFood
@@ -79,7 +78,7 @@ struct IngredientListView: View {
                         .tag(ingredient.persistentModelID)
                     }
                     .onMove { source, destination in
-                        viewModel.moveIngredients(from: source, to: destination, ingredientOrderCustomised: &ingredientOrderCustomised)
+                        viewModel.moveIngredients(from: source, to: destination)
                     }
                 }
             }
@@ -88,20 +87,20 @@ struct IngredientListView: View {
         .listStyle(.plain)
         .navigationTitle("Ingredients")
         .onAppear {
-            viewModel.refreshDisplayedIngredients(ingredientOrderCustomised: ingredientOrderCustomised)
+            viewModel.refreshDisplayedIngredients()
         }
         .onChange(of: viewModel.selectedGroup) {
-            viewModel.refreshDisplayedIngredients(ingredientOrderCustomised: ingredientOrderCustomised)
+            viewModel.refreshDisplayedIngredients()
         }
         .onChange(of: viewModel.selectedFoodGroup?.ingredients?.count) {
-            viewModel.refreshDisplayedIngredients(ingredientOrderCustomised: ingredientOrderCustomised)
+            viewModel.refreshDisplayedIngredients()
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if viewModel.isEditing {
                     HStack {
                         Button("Hide Selected") {
-                            viewModel.hideSelected(expandedIngredients: &expandedIngredients, ingredientOrderCustomised: ingredientOrderCustomised)
+                            viewModel.hideSelected(expandedIngredients: &expandedIngredients)
                         }
                         .disabled(viewModel.selectedIDs.isEmpty)
                         Button("Done") {
@@ -112,10 +111,18 @@ struct IngredientListView: View {
                         }
                     }
                 } else {
-                    Button("Edit") {
-                        viewModel.cancelCurrentGeneration(expandedIngredients: &expandedIngredients)
-                        withAnimation {
-                            viewModel.isEditing = true
+                    HStack {
+                        Button {
+                            viewModel.toggleAlphabetical()
+                        } label: {
+                            Image(systemName: "textformat.characters")
+                        }
+                        .disabled(viewModel.isAlphabetical || viewModel.generator.generatingGroup != nil)
+                        Button("Edit") {
+                            viewModel.cancelCurrentGeneration(expandedIngredients: &expandedIngredients)
+                            withAnimation {
+                                viewModel.isEditing = true
+                            }
                         }
                     }
                 }

@@ -93,27 +93,40 @@ final class IngredientListViewModel {
     var selectedFoodGroup: FoodGroup? {
         generator.foodGroups.first { $0.group == selectedGroup }
     }
+    
+    /// Whether the current food group is sorted alphabetically.
+    var isAlphabetical: Bool {
+        selectedFoodGroup?.order == .alphabetical
+    }
 
     // MARK: - Ingredient List
 
-    func refreshDisplayedIngredients(ingredientOrderCustomised: Bool) {
+    func refreshDisplayedIngredients() {
         guard let foodGroup = selectedFoodGroup else {
             displayedIngredients = []
             return
         }
-        displayedIngredients = sortedIngredients(for: foodGroup, ingredientOrderCustomised: ingredientOrderCustomised)
+        displayedIngredients = sortedIngredients(for: foodGroup)
     }
 
-    private func sortedIngredients(for foodGroup: FoodGroup, ingredientOrderCustomised: Bool) -> [Ingredient] {
+    private func sortedIngredients(for foodGroup: FoodGroup) -> [Ingredient] {
         let visible = foodGroup.ingredients?.filter { !$0.isHidden } ?? []
-        if ingredientOrderCustomised {
-            return visible.sorted { $0.sortOrder < $1.sortOrder }
-        } else {
+        switch foodGroup.order {
+        case .stable:
+            return visible
+        case .alphabetical:
             return visible.sorted()
+        case .custom:
+            return visible.sorted { $0.sortOrder < $1.sortOrder }
         }
     }
 
     // MARK: - Actions
+
+    func toggleAlphabetical() {
+        selectedFoodGroup?.order = .alphabetical
+        refreshDisplayedIngredients()
+    }
 
     func toggleExpanded(_ ingredient: Ingredient, expandedIngredients: inout Set<PersistentIdentifier>) {
         let id = ingredient.persistentModelID
@@ -140,11 +153,11 @@ final class IngredientListViewModel {
         variety.visibilityState = IngredientVisibility.hidden.rawValue
     }
 
-    func hideSelected(expandedIngredients: inout Set<PersistentIdentifier>, ingredientOrderCustomised: Bool) {
+    func hideSelected(expandedIngredients: inout Set<PersistentIdentifier>) {
         for ingredient in displayedIngredients where selectedIDs.contains(ingredient.persistentModelID) {
             hideIngredient(ingredient, expandedIngredients: &expandedIngredients)
         }
-        refreshDisplayedIngredients(ingredientOrderCustomised: ingredientOrderCustomised)
+        refreshDisplayedIngredients()
         withAnimation {
             selectedIDs = []
             isEditing = false
@@ -153,14 +166,13 @@ final class IngredientListViewModel {
 
     func moveIngredients(
         from source: IndexSet,
-        to destination: Int,
-        ingredientOrderCustomised: inout Bool
+        to destination: Int
     ) {
         displayedIngredients.move(fromOffsets: source, toOffset: destination)
         for (index, ingredient) in displayedIngredients.enumerated() {
             ingredient.sortOrder = index
         }
-        ingredientOrderCustomised = true
+        selectedFoodGroup?.order = .custom
     }
 
     func cancelCurrentGeneration(expandedIngredients: inout Set<PersistentIdentifier>) {
