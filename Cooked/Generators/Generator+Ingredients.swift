@@ -74,8 +74,8 @@ extension Generator {
             // permissiveContentTransformations. It's either completely random
             // or overly restrictive.
             
-            let parser = StringParser(strategy: DelimitedStringParsingStrategy())
-            let lines = parser.parseString(response.content)
+            let parser = Parser(strategy: DelimitedStringParsingStrategy())
+            let lines = parser.parse(response.content)
             
             if debug {
                 print("Responded with:", lines.count, "items")

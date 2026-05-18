@@ -7,21 +7,24 @@
 
 import Foundation
 
-/// Given a string, parse it into sub strings, in different ways.
-protocol StringParsingStrategy {
-    func splitString(_ string: String) -> [String]
-    func cleanupSubstrings(_ substrings: [String]) -> [String]
+// MARK: - Parsing Strategies
+
+/// Given a chunk of data, parse it into sub parts, in different ways.
+protocol ParsingStrategy {
+    associatedtype Chunk
+    func splitChunk(_ chunk: Chunk) -> [Chunk]
+    func cleanupChunks(_ chunks: [Chunk]) -> [Chunk]
 }
 
 /// Parse a delimited string into sub strings
-struct DelimitedStringParsingStrategy: StringParsingStrategy {
+struct DelimitedStringParsingStrategy: ParsingStrategy {
     
-    func splitString(_ string: String) -> [String] {
+    func splitChunk(_ string: String) -> [String] {
         string.split(separator: /\d+\.?|[,\n\-•–*—·]+|\band\b/).map { String($0) }
     }
     
-    func cleanupSubstrings(_ substrings: [String]) -> [String] {
-        substrings.map {
+    func cleanupChunks(_ string: [String]) -> [String] {
+        string.map {
             $0.trimmingCharacters(in: .whitespacesAndNewlines)
                 .trimmingCharacters(in: .punctuationCharacters)
                 .trimmingCharacters(in: CharacterSet(charactersIn: "`"))
@@ -30,14 +33,16 @@ struct DelimitedStringParsingStrategy: StringParsingStrategy {
     }
 }
 
-/// A string parser that takes a parsing strategy
-struct StringParser<Strategy: StringParsingStrategy> {
+// MARK: - Parser
+
+/// A generic parser that takes a parsing strategy
+struct Parser<S: ParsingStrategy> {
     
-    let strategy: Strategy
+    let strategy: S
     
-    func parseString(_ string: String) -> [String] {
-        strategy.cleanupSubstrings(
-            strategy.splitString(string)
+    func parse(_ chunk: S.Chunk) -> [S.Chunk] {
+        strategy.cleanupChunks(
+            strategy.splitChunk(chunk)
         )
     }
 }

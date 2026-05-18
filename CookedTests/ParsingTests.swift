@@ -19,7 +19,7 @@ extension Tag {
 @Suite(.tags(.parsing))
 struct ParsingTests {
 
-    let sut = StringParser(strategy: DelimitedStringParsingStrategy())
+    let sut = Parser(strategy: DelimitedStringParsingStrategy())
 
     // MARK: - Delimiter variants
 
@@ -46,7 +46,7 @@ struct ParsingTests {
     func delimiterVariantsProduceSameIngredients(input: String) {
         // LEARNING: this test is called once for each element
         // in the arguments collection ^.
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
@@ -55,14 +55,14 @@ struct ParsingTests {
     @Test("Numbered list with dots parses correctly")
     func numberedListWithDots() {
         let input = "1. chicken\n2. beef\n3. tofu\n4. salmon"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
     @Test("Numbered list without dots parses correctly")
     func numberedListWithoutDots() {
         let input = "1 chicken\n2 beef\n3 tofu\n4 salmon"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
@@ -80,14 +80,14 @@ struct ParsingTests {
         ]
     )
     func quotedNamesAreStripped(input: String) {
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
     @Test("Backtick-wrapped names are stripped")
     func backtickWrappedNamesAreStripped() {
         let input = "`chicken`, `beef`, `tofu`, `salmon`"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
@@ -96,21 +96,21 @@ struct ParsingTests {
     @Test("Mixed casing is lowercased")
     func mixedCasingIsLowercased() {
         let input = "Chicken, Beef, Tofu, Salmon"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
     @Test("Extra whitespace around names is trimmed")
     func extraWhitespaceIsTrimmed() {
         let input = "  chicken ,  beef ,  tofu ,  salmon  "
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
     @Test("ALL CAPS ingredient names are lowercased")
     func allCapsIsLowercased() {
         let input = "CHICKEN, BEEF, TOFU, SALMON"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
@@ -119,7 +119,7 @@ struct ParsingTests {
     @Test("'and' as a word delimiter splits correctly")
     func andWordDelimiterSplitsCorrectly() {
         let input = "chicken and beef and tofu and salmon"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
@@ -127,7 +127,7 @@ struct ParsingTests {
     func andInsideNameIsNotSplit() {
         // "candy" contains "and" but is not a standalone word boundary
         let input = "candy, bread"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["candy", "bread"])
     }
 
@@ -136,7 +136,7 @@ struct ParsingTests {
     @Test("Trailing comma does not produce empty token")
     func trailingCommaDoesNotProduceEmptyToken() {
         let input = "chicken, beef, tofu, salmon,"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         // The split regex won't produce a trailing empty string here —
         // verify no blank entries leak through.
         #expect(result.filter(\.isEmpty).isEmpty, "No empty strings should appear in result")
@@ -146,7 +146,7 @@ struct ParsingTests {
     @Test("Multiple consecutive delimiters produce no empty tokens")
     func multipleConsecutiveDelimitersProduceNoEmptyTokens() {
         let input = "chicken,, beef,,\n\ntofu,, salmon"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result.filter(\.isEmpty).isEmpty, "No empty strings should appear in result")
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
@@ -156,7 +156,7 @@ struct ParsingTests {
     @Test("Single ingredient without delimiter returns one-element array")
     func singleIngredientReturnsOneElement() {
         let input = "chicken"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken"])
     }
 
@@ -165,14 +165,14 @@ struct ParsingTests {
     @Test("Bullet points with double-quoted names are parsed and stripped")
     func bulletPointsWithDoubleQuotedNames() {
         let input = "• \"chicken\"\n• \"beef\"\n• \"tofu\"\n• \"salmon\""
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 
     @Test("Numbered list with single-quoted names are parsed and stripped")
     func numberedListWithSingleQuotedNames() {
         let input = "1. 'chicken'\n2. 'beef'\n3. 'tofu'\n4. 'salmon'"
-        let result = sut.parseString(input)
+        let result = sut.parse(input)
         #expect(result == ["chicken", "beef", "tofu", "salmon"])
     }
 }
