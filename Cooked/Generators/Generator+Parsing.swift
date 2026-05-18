@@ -17,7 +17,7 @@ protocol StringParsingStrategy {
 struct DelimitedStringParsingStrategy: StringParsingStrategy {
     
     func splitString(_ string: String) -> [String] {
-        string.split(separator: /\d+\.?|[,\n\-•*]+|\band\b/).map { String($0) }
+        string.split(separator: /\d+\.?|[,\n\-•–*—·]+|\band\b/).map { String($0) }
     }
     
     func cleanupSubstrings(_ substrings: [String]) -> [String] {
