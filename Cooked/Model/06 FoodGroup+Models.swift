@@ -55,8 +55,9 @@ struct GeneratedVariety: Equatable {
 // and everything else (methods, etc) in the extension.
 
 /// A food group or ingredient that contains ingredients or varieties, respectively
-protocol IngredientContainer {
+protocol IngredientContainer: AnyObject {
     var name: String { get set }
+    var about: String { get set }
     var containedCount: Int { get }
     var isEmpty: Bool { get }
     func getFoodGroup() -> FoodGroup.Group
@@ -101,6 +102,7 @@ extension SchemaV1 {
     final class FoodGroup {
         
         var name: String = Group.staple.rawValue
+        var about: String = ""
         
         var ingredientOrder: Int = IngredientOrder.stable.rawValue
         
@@ -110,8 +112,9 @@ extension SchemaV1 {
         @Relationship
         var foodItems: [FoodItem]?
         
-        init(_ name: Group) {
+        init(_ name: Group, about: String = "") {
             self.name = name.rawValue
+            self.about = about
         }
     }
 }
@@ -343,6 +346,7 @@ extension SchemaV1 {
     final class Variety {
         
         var name: String = "Some Food"
+        var about: String = ""
         var isRegional: Bool = true
         
         var visibilityState: String = IngredientVisibility.shown.rawValue
@@ -361,8 +365,10 @@ extension SchemaV1 {
         @Relationship
         var foodItems: [FoodItem]?
         
-        init(name: String, isRegional: Bool) {
+        init(name: String, about: String = "", isRegional: Bool = true) {
             self.name = name
+            self.about = about
+            self.isRegional = isRegional
         }
     }
 }

@@ -150,18 +150,7 @@ extension Generator {
                     }
                     switch settings.kind {
                     case .ingredients:
-                        let descriptionResponse = try await auditSession.respond(
-                            to: "Give a one-sentence description of '\(line)' as a food ingredient.",
-                            generating: String.self
-                        )
-                        if token.isCancelled {
-                            throw GeneratorError.cancelled
-                        }
-                        let about = descriptionResponse.content
-                        if debug {
-                            print(line, "description:", about)
-                        }
-                        let ingredient = Ingredient(name: line, about: about, isRegional: isRegional.content)
+                        let ingredient = Ingredient(name: line, isRegional: isRegional.content)
                         container.addContained(ingredient)
                         // Save immediately so this Ingredient gets a permanent PersistentIdentifier.
                         // There was a problem in IngredientListView which uses these identifiers
@@ -172,6 +161,23 @@ extension Generator {
                         // a view re-render.
                         try? modelContext.save()
                     case .varieties:
+                        if container.about.isEmpty {
+                            // During variety generation, stream the ingredient's description
+                            let descriptionStream = auditSession.streamResponse(
+                                to: "Give a one-sentence description of '\(container.name)' as a food ingredient.",
+                                generating: String.self
+                            )
+                            for try await partialDescription in descriptionStream {
+                                if token.isCancelled {
+                                    throw GeneratorError.cancelled
+                                }
+                                let about = partialDescription.content
+                                container.about = about
+                                if debug {
+                                    print(line, "description:", about)
+                                }
+                            }
+                        }
                         let variety = Variety(name: line, isRegional: isRegional.content)
                         container.addContained(variety)
                     }

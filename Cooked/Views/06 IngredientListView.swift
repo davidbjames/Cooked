@@ -366,8 +366,15 @@ private struct IngredientRow: View {
             .accessibilityAddTraits(.isButton)
 
             if !isEditMode && isExpanded {
-                if !ingredient.about.isEmpty {
-                    Text(ingredient.about)
+                // Read the ingredient's streamed "about" description.
+                // LEARNING: it's necessary to create this local variable
+                // in order for SwiftUI to properly track this change.
+                // e.g. if !ingredient.about.isEmpty does not work because
+                // it doesn't allow SwiftUI to register the dependency
+                // for observation and re-rendering.
+                let about = ingredient.about
+                if !about.isEmpty {
+                    Text(about)
                         .foregroundStyle(.secondary)
                         .font(.footnote)
                         .padding(.leading, 16)
@@ -375,6 +382,7 @@ private struct IngredientRow: View {
                 let visible = ingredient.varieties?.filter { !$0.isHidden } ?? []
                 let varieties = visible.filter { $0.isUsed } + visible.filter { !$0.isUsed }
                 if !varieties.isEmpty || isGenerating {
+                    
                     FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
                         IngredientChip(ingredient: ingredient) {
                             onSelect(nil)
