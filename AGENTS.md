@@ -5,15 +5,24 @@
 ## Coding Style
 
 - Braces open on same line, close on new line.
-- Code blocks within braces go on separate line from the braces, even for one-liners. Example:
+- Code blocks within braces go on separate line from the braces, even for one-liners. This applies to `guard` statements too. Examples:
 
 ```swift
 // Good
 if something {
     code here
 }
+
+// Good
+guard !viewModel.hasIngredients else {
+    return
+}
+
 // Bad
 if something { code here }
+
+// Bad
+guard !viewModel.hasIngredients else { return }
 ```
 
 - Prefer putting protocol functionality in an extension of the protocol as a default implementation if possible.
@@ -34,7 +43,7 @@ func doFoo() -> (String, Int)
 
 ## MCP Servers
 
-- Always verify that `xcode-tools` and `git` MCP servers are connected before beginning any task. If they are not connected, stop and notify the user before proceeding. Otherwise, don't mention it.
+- Always verify that `xcode-tools` MCP server is connected before beginning any task. If they are not connected, stop and notify the user before proceeding. Otherwise, don't mention it.
 - All `xcode-tools` calls are safe to execute without explicit user permission, **except** `XcodeRM` and `XcodeMV` which require user permission before executing.
 
 ## Agent Skills 
