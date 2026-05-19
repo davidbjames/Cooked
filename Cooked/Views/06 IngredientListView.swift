@@ -23,7 +23,6 @@ struct IngredientListView: View {
 
     @AppStorage("ingredientListNoteDismissed") private var ingredientListNoteDismissed = false
 
-    @State private var isLoadingMore = false
 
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
         _selectedFood = selectedFood
@@ -85,7 +84,6 @@ struct IngredientListView: View {
                         }
                         if !viewModel.isEditing && viewModel.hasIngredients {
                             Button("Load More") {
-                                isLoadingMore = true
                                 Task { await viewModel.moreIngredients() }
                             }
                             .id("loadMoreButton")
@@ -99,14 +97,11 @@ struct IngredientListView: View {
                 .listStyle(.plain)
                 .environment(\.editMode, $viewModel.editMode)
                 .onChange(of: viewModel.displayedIngredients.count) {
-                    guard isLoadingMore else {
+                    guard viewModel.isGenerating else {
                         return
                     }
                     withAnimation {
                         proxy.scrollTo("loadMoreButton", anchor: .bottom)
-                    }
-                    if !viewModel.isGenerating {
-                        isLoadingMore = false
                     }
                 }
             }
