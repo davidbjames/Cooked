@@ -23,6 +23,8 @@ struct IngredientListView: View {
 
     @AppStorage("ingredientListNoteDismissed") private var ingredientListNoteDismissed = false
 
+    @State private var isLoadingMore = false
+
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
         _selectedFood = selectedFood
         _expandedIngredients = expandedIngredients
@@ -43,57 +45,72 @@ struct IngredientListView: View {
                     .padding(.horizontal)
                     .padding(.vertical, 10)
             }
-            List(selection: viewModel.isEditing ? $viewModel.selectedIDs : .constant(Set<PersistentIdentifier>())) {
-                if !viewModel.isEditing && !ingredientListNoteDismissed {
-                    IngredientListNote(isDismissed: $ingredientListNoteDismissed)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 32, bottom: 8, trailing: 32))
-                }
-                if let foodGroup = viewModel.selectedFoodGroup {
-                    let ingredients = viewModel.displayedIngredients
-                    ForEach(
-                        Array(ingredients.positionEnumerated()),
-                        // Even though PersistentModel is already Identifiable
-                        // we must manually specify the list identifier because
-                        // of the enumerated tuple ^.
-                        id: \.element.persistentModelID
-                    ) { position, ingredient in
-                        IngredientRow(
-                            ingredient: ingredient,
-                            isExpanded: expandedIngredients.contains(ingredient.persistentModelID),
-                            isGenerating: viewModel.generatingVarieties.contains(ingredient.persistentModelID),
-                            isEditMode: viewModel.isEditing,
-                            onToggle: { viewModel.toggleExpanded(ingredient, expandedIngredients: &expandedIngredients) },
-                            onSelect: { variety in
-                                viewModel.selectVariety(variety, ingredient: ingredient, group: foodGroup) { foodItem in
-                                    selectedFood = foodItem
-                                    dismiss()
-                                }
-                            },
-                            onHide: { viewModel.hideIngredient(ingredient, expandedIngredients: &expandedIngredients) },
-                            onHideVariety: { variety in viewModel.hideVariety(variety) }
-                        )
-                        .listRowSeparator(position.isStart ? .hidden : .visible, edges: .top)
-                        .listRowSeparator(position.isEnd ? .hidden : .visible, edges: .bottom)
-                        .tag(ingredient.persistentModelID)
+            ScrollViewReader { proxy in
+                List(selection: viewModel.isEditing ? $viewModel.selectedIDs : .constant(Set<PersistentIdentifier>())) {
+                    if !viewModel.isEditing && !ingredientListNoteDismissed {
+                        IngredientListNote(isDismissed: $ingredientListNoteDismissed)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 32, bottom: 8, trailing: 32))
                     }
-                    .onMove { source, destination in
-                        viewModel.moveIngredients(from: source, to: destination)
-                    }
-                    if !viewModel.isEditing && viewModel.hasIngredients {
-                        Button("Load More") {
-                            Task { await viewModel.moreIngredients() }
+                    if let foodGroup = viewModel.selectedFoodGroup {
+                        let ingredients = viewModel.displayedIngredients
+                        ForEach(
+                            Array(ingredients.positionEnumerated()),
+                            // Even though PersistentModel is already Identifiable
+                            // we must manually specify the list identifier because
+                            // of the enumerated tuple ^.
+                            id: \.element.persistentModelID
+                        ) { position, ingredient in
+                            IngredientRow(
+                                ingredient: ingredient,
+                                isExpanded: expandedIngredients.contains(ingredient.persistentModelID),
+                                isGenerating: viewModel.generatingVarieties.contains(ingredient.persistentModelID),
+                                isEditMode: viewModel.isEditing,
+                                onToggle: { viewModel.toggleExpanded(ingredient, expandedIngredients: &expandedIngredients) },
+                                onSelect: { variety in
+                                    viewModel.selectVariety(variety, ingredient: ingredient, group: foodGroup) { foodItem in
+                                        selectedFood = foodItem
+                                        dismiss()
+                                    }
+                                },
+                                onHide: { viewModel.hideIngredient(ingredient, expandedIngredients: &expandedIngredients) },
+                                onHideVariety: { variety in viewModel.hideVariety(variety) }
+                            )
+                            .listRowSeparator(position.isStart ? .hidden : .visible, edges: .top)
+                            .listRowSeparator(position.isEnd ? .hidden : .visible, edges: .bottom)
+                            .tag(ingredient.persistentModelID)
                         }
-                        .disabled(viewModel.isGenerating)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 12, leading: 32, bottom: 12, trailing: 32))
+                        .onMove { source, destination in
+                            viewModel.moveIngredients(from: source, to: destination)
+                        }
+                        if !viewModel.isEditing && viewModel.hasIngredients {
+                            Button("Load More") {
+                                isLoadingMore = true
+                                Task { await viewModel.moreIngredients() }
+                            }
+                            .id("loadMoreButton")
+                            .disabled(viewModel.isGenerating)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 12, leading: 32, bottom: 12, trailing: 32))
+                        }
+                    }
+                }
+                .listStyle(.plain)
+                .environment(\.editMode, $viewModel.editMode)
+                .onChange(of: viewModel.displayedIngredients.count) {
+                    guard isLoadingMore else {
+                        return
+                    }
+                    withAnimation {
+                        proxy.scrollTo("loadMoreButton", anchor: .bottom)
+                    }
+                    if !viewModel.isGenerating {
+                        isLoadingMore = false
                     }
                 }
             }
-            .environment(\.editMode, $viewModel.editMode)
         }
-        .listStyle(.plain)
         .navigationTitle("Ingredients")
         .onAppear {
             viewModel.refreshDisplayedIngredients()
