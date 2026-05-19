@@ -25,32 +25,37 @@ if something { code here }
 guard !viewModel.hasIngredients else { return }
 ```
 
-- When `if` or `guard` statements have multiple conditions, put each condition on its own indented line. For `guard`, the `else {` goes on its own line aligned with `guard`. Examples:
+- When `if` or `guard` statements have multiple conditions that together exceed 50 characters (including spaces), put each condition on its own indented line. For `if` the open brace goes on its own line. For `guard`, the `else {` goes on its own line aligned with `guard`. If conditions fit within 50 characters they may stay on one line (while still respecting the code block rule). Examples:
 
 ```swift
-// Good
+// Good — conditions exceed 50 characters
 if
-    let ingredient,
+    let ingredient = viewModel.currentIngredient,
     ingredient.isAvailable
 {
     use(ingredient)
 }
 
-// Good
+// Good — conditions exceed 50 characters
 guard
-    let user = currentUser,
+    let user = authService.currentUser,
     user.isLoggedIn
 else {
     return
 }
 
-// Bad
-if let ingredient, ingredient.isAvailable {
+// Also good — conditions fit within 50 characters
+if let ingredient, ingredient.isValid {
     use(ingredient)
 }
 
-// Bad
-guard let user = currentUser, user.isLoggedIn else {
+// Bad — conditions exceed 50 characters but not broken out
+if let ingredient = viewModel.currentIngredient, ingredient.isAvailable {
+    use(ingredient)
+}
+
+// Bad — conditions exceed 50 characters but not broken out
+guard let user = authService.currentUser, user.isLoggedIn else {
     return
 }
 ```
