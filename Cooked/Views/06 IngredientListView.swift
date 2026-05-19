@@ -117,13 +117,23 @@ struct IngredientListView: View {
             viewModel.refreshDisplayedIngredients()
         }
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
                 if viewModel.isEditing {
                     HStack {
+                        Button("Alphabetical") {
+                            viewModel.toggleAlphabetical()
+                        }
+                        .disabled(!viewModel.selectedIDs.isEmpty || viewModel.isAlphabetical)
                         Button("Hide Selected") {
                             viewModel.hideSelected(expandedIngredients: &expandedIngredients)
                         }
                         .disabled(viewModel.selectedIDs.isEmpty)
+                    }
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if viewModel.isEditing {
+                    HStack {
                         Button("Done") {
                             withAnimation {
                                 viewModel.isEditing = false
@@ -133,12 +143,6 @@ struct IngredientListView: View {
                     }
                 } else {
                     HStack {
-                        Button {
-                            viewModel.toggleAlphabetical()
-                        } label: {
-                            Image(systemName: "textformat.characters")
-                        }
-                        .disabled(viewModel.isAlphabetical || viewModel.isGenerating)
                         Button("Edit") {
                             viewModel.cancelCurrentGeneration(expandedIngredients: &expandedIngredients)
                             withAnimation {

@@ -184,6 +184,7 @@ final class IngredientListViewModel {
             ingredient.sortOrder = index
         }
         selectedFoodGroup?.order = .custom
+        refreshDisplayedIngredients()
     }
 
     func cancelCurrentGeneration(expandedIngredients: inout Set<PersistentIdentifier>) {
