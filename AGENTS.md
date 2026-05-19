@@ -25,6 +25,36 @@ if something { code here }
 guard !viewModel.hasIngredients else { return }
 ```
 
+- When `if` or `guard` statements have multiple conditions, put each condition on its own indented line. For `guard`, the `else {` goes on its own line aligned with `guard`. Examples:
+
+```swift
+// Good
+if
+    let ingredient,
+    ingredient.isAvailable
+{
+    use(ingredient)
+}
+
+// Good
+guard
+    let user = currentUser,
+    user.isLoggedIn
+else {
+    return
+}
+
+// Bad
+if let ingredient, ingredient.isAvailable {
+    use(ingredient)
+}
+
+// Bad
+guard let user = currentUser, user.isLoggedIn else {
+    return
+}
+```
+
 - Prefer putting protocol functionality in an extension of the protocol as a default implementation if possible.
 - Any time we declare a tuple type, make sure to add logical tuple label names, unless directed otherwise. Example:
 
