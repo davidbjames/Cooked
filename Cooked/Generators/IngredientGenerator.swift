@@ -19,13 +19,14 @@ final class IngredientGenerator: Generator {
     /// Track the currently generating group for UX
     private(set) var generatingGroup: FoodGroup.Group? = nil
     
+    /// Generates ingredients for all food groups on demand.
     override func generate() async throws(GeneratorError) {
         try await super.generate()
         defer {
             generatingGroup = nil
         }
-        try prepareGroups()
-        for group in FoodGroup.Group.allCases { // .dropFirst(2) for testing one group only
+        prepareGroups()
+        for group in FoodGroup.Group.allCases {
             if token.isCancelled {
                 throw GeneratorError.cancelled
             }
@@ -41,15 +42,29 @@ final class IngredientGenerator: Generator {
         defer {
             generatingGroup = nil
         }
-        try prepareGroups()
+        prepareGroups()
         try await generateGroup(group)
     }
     
+    // MARK: - Internal
+
+    /// Prepares `foodGroups` from the store if not already loaded.
+    ///
+    /// Safe to call before any read that depends on `foodGroups` being populated,
+    /// e.g. before checking `hasIngredients` on the view model.
+    func prepareGroupsIfNeeded() {
+        guard foodGroups.isEmpty else { return }
+        prepareGroups()
+    }
+
     // MARK: - Private
-    
-    /// De-duplicate and sort `foodGroups` from the SwiftData store.
-    /// Must be called at the start of any generation run.
-    private func prepareGroups() throws(GeneratorError) {
+
+    /// Clears and repopulates `foodGroups` from the store, de-duplicating any
+    /// records left by previous incomplete runs.
+    ///
+    /// Safe to call multiple times — resets state before re-populating.
+    private func prepareGroups() {
+        foodGroups = []
         // De-duplicate any FoodGroup records that may exist from previous incomplete runs.
         // (#Unique constraints are not available with CloudKit-backed stores.)
         let allFetchedGroups = modelContext.fetchAll(FoodGroup.self)

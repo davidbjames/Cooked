@@ -104,9 +104,15 @@ final class IngredientListViewModel {
         selectedFoodGroup?.order == .alphabetical
     }
 
+    /// Whether the selected food group has at least one visible ingredient.
+    var hasIngredients: Bool {
+        !(selectedFoodGroup?.ingredients?.filter { !$0.isHidden }.isEmpty ?? true)
+    }
+
     // MARK: - Ingredient List
 
     func refreshDisplayedIngredients() {
+        generator.prepareGroupsIfNeeded()
         guard let foodGroup = selectedFoodGroup else {
             displayedIngredients = []
             return
@@ -206,6 +212,12 @@ final class IngredientListViewModel {
     }
 
     // MARK: - Generation Task
+
+    /// Generates more ingredients for the selected food group, resetting its sort order to stable first.
+    func moreIngredients() async {
+        selectedFoodGroup?.order = .stable
+        await runIngredientGeneration()
+    }
 
     func runIngredientGeneration() async {
         let oldToken = generator.token

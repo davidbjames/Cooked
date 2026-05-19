@@ -80,6 +80,15 @@ struct IngredientListView: View {
                     .onMove { source, destination in
                         viewModel.moveIngredients(from: source, to: destination)
                     }
+                    if !viewModel.isEditing && viewModel.hasIngredients {
+                        Button("Load More") {
+                            Task { await viewModel.moreIngredients() }
+                        }
+                        .disabled(viewModel.isGenerating)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 12, leading: 32, bottom: 12, trailing: 32))
+                    }
                 }
             }
             .environment(\.editMode, $viewModel.editMode)
@@ -129,6 +138,10 @@ struct IngredientListView: View {
             }
         }
         .task(id: viewModel.selectedGroup) {
+            guard !viewModel.hasIngredients else {
+                // only auto-generate if there are none
+                return
+            }
             await viewModel.runIngredientGeneration()
         }
         .alert("Apple Intelligence", isPresented: .init(
