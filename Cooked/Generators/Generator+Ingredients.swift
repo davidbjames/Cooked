@@ -106,6 +106,32 @@ extension Generator {
                     }
                 )
                 do {
+                    switch settings.kind {
+                    case .ingredients:
+                        break
+                    case .varieties:
+                        guard container.about.isEmpty else {
+                            break
+                        }
+                        // During variety generation, stream the ingredient's description.
+                        // This is done before the "is food" check because we know
+                        // by this point that the ingredient (the varieties "container")
+                        // has already been validated.
+                        let descriptionStream = auditSession.streamResponse(
+                            to: "Give a one-sentence description of '\(container.name)' as a food ingredient.",
+                            generating: String.self
+                        )
+                        for try await partialDescription in descriptionStream {
+                            if token.isCancelled {
+                                throw GeneratorError.cancelled
+                            }
+                            let about = partialDescription.content
+                            container.about = about
+                        }
+                        if debug {
+                            print(line, "description:", container.about)
+                        }
+                    }
                     // The "is food" check handles situations where the model refuses to generate
                     // the response due to guardrail errors, in which case the string response
                     // may contain explanations which need to be filtered out.
@@ -161,23 +187,6 @@ extension Generator {
                         // a view re-render.
                         try? modelContext.save()
                     case .varieties:
-                        if container.about.isEmpty {
-                            // During variety generation, stream the ingredient's description
-                            let descriptionStream = auditSession.streamResponse(
-                                to: "Give a one-sentence description of '\(container.name)' as a food ingredient.",
-                                generating: String.self
-                            )
-                            for try await partialDescription in descriptionStream {
-                                if token.isCancelled {
-                                    throw GeneratorError.cancelled
-                                }
-                                let about = partialDescription.content
-                                container.about = about
-                                if debug {
-                                    print(line, "description:", about)
-                                }
-                            }
-                        }
                         let variety = Variety(name: line, isRegional: isRegional.content)
                         container.addContained(variety)
                     }
