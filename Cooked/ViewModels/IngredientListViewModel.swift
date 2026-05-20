@@ -62,10 +62,13 @@ final class IngredientListViewModel {
     /// May trigger an "Apple Intelligence" alert.
     var generatorError: GeneratorError?
     
+    // MARK: - State (not observed)
+    
     /// Cancellation token for the current ingredient generation task.
     ///
     /// Replaced with a fresh token each time generation starts so that
     /// stale streaming responses from a previous group are silently dropped.
+    @ObservationIgnored
     var ingredientGenerationToken: Generator.GenerationToken
     
     /// Cancellation token for the current variety-generation task.
@@ -73,6 +76,7 @@ final class IngredientListViewModel {
     /// A single shared token is reused across sequential variety requests
     /// and cancelled whenever the user collapses a row, taps a variety,
     /// or enters edit mode.
+    @ObservationIgnored
     var varietyGenerationToken: Generator.GenerationToken?
 
     /// Whether a generation run has occurred during this view-model lifetime.
@@ -81,6 +85,7 @@ final class IngredientListViewModel {
     /// bottom rather than re-sorting, keeping the list stable while the user
     /// is on this screen. Resets to `false` when edit mode is entered so the
     /// full sort order is applied before the user reorders manually.
+    @ObservationIgnored
     var isGenerationSession: Bool = false
     
     // MARK: - Init
