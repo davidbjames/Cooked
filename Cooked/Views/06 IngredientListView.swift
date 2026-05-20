@@ -111,6 +111,8 @@ struct IngredientListView: View {
             viewModel.refreshDisplayedIngredients()
         }
         .onChange(of: viewModel.selectedGroup) {
+            // on food group change reset "generation session"
+            viewModel.isGenerationSession = false
             viewModel.refreshDisplayedIngredients()
         }
         .onChange(of: viewModel.selectedFoodGroup?.ingredients?.count) {

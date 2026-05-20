@@ -70,6 +70,8 @@ func doFoo() -> (foo: String, bar: Int)
 func doFoo() -> (String, Int)
 ```
 
+- Always consider before adding new state. Can the problem be solved without adding more state that needs to be managed? Review. If adding new state is honestly the best way, go ahead.
+
 ## Documentation
 
 - Documentation on types, methods and properties should be as concise as possible, preferrably on one line. If further details are needed to understand the broader purpose (the "why"), add a blank line followed by that information. This additional information should also be as concise as possible.
