@@ -74,6 +74,14 @@ final class IngredientListViewModel {
     /// and cancelled whenever the user collapses a row, taps a variety,
     /// or enters edit mode.
     var varietyGenerationToken: Generator.GenerationToken?
+
+    /// Whether a generation run has occurred during this view-model lifetime.
+    ///
+    /// Once `true`, `refreshDisplayedIngredients()` appends new items to the
+    /// bottom rather than re-sorting, keeping the list stable while the user
+    /// is on this screen. Resets to `false` when edit mode is entered so the
+    /// full sort order is applied before the user reorders manually.
+    var isGenerationSession: Bool = false
     
     // MARK: - Init
 
@@ -117,7 +125,15 @@ final class IngredientListViewModel {
             displayedIngredients = []
             return
         }
-        displayedIngredients = sortedIngredients(for: foodGroup)
+        let appendOnly = isGenerationSession
+        if appendOnly {
+            let sorted = sortedIngredients(for: foodGroup)
+            let existing = Set(displayedIngredients.map { $0.persistentModelID })
+            let newItems = sorted.filter { !existing.contains($0.persistentModelID) }
+            displayedIngredients.append(contentsOf: newItems)
+        } else {
+            displayedIngredients = sortedIngredients(for: foodGroup)
+        }
     }
 
     private func sortedIngredients(for foodGroup: FoodGroup) -> [Ingredient] {
@@ -188,6 +204,7 @@ final class IngredientListViewModel {
     }
 
     func cancelCurrentGeneration(expandedIngredients: inout Set<PersistentIdentifier>) {
+        isGenerationSession = false
         ingredientGenerationToken.isCancelled = true
         generator.token.isCancelled = true
         varietyGenerationToken?.isCancelled = true
@@ -214,13 +231,13 @@ final class IngredientListViewModel {
 
     // MARK: - Generation Task
 
-    /// Generates more ingredients for the selected food group, resetting its sort order to stable first.
+    /// Generates more ingredients for the selected food group.
     func moreIngredients() async {
-        selectedFoodGroup?.order = .stable
         await runIngredientGeneration()
     }
 
     func runIngredientGeneration() async {
+        isGenerationSession = true
         let oldToken = generator.token
         generator.token = Generator.GenerationToken()
         ingredientGenerationToken = generator.token
