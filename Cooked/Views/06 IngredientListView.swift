@@ -201,21 +201,20 @@ private struct IngredientListNote: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            if false {
-                // TBD: leave this off for now.
-                // Possibly show it in edit mode only?
-                Button {
-                    withAnimation {
-                        isDismissed = true
+                .padding(.trailing, 10.0) // margin (i.e. padding after frame)
+                .overlay(alignment: .topTrailing) {
+                    Button {
+                        withAnimation {
+                            isDismissed = true
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                            .imageScale(.medium)
                     }
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
-                        .imageScale(.medium)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Dismiss note")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Dismiss note")
-            }
         }
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
     }
