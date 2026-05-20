@@ -6,6 +6,7 @@
 //
 
 import SwiftData
+import Foundation
 
 enum DataHelpers {
     
@@ -37,6 +38,11 @@ enum DataHelpers {
         
         if !deferSave {
             try context.save()
+        }
+        
+        // Delete all user default data
+        for key in String.allUserDefaultKeys {
+            UserDefaults.standard.removeObject(forKey: key)
         }
     }
     

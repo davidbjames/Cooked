@@ -21,7 +21,7 @@ struct IngredientListView: View {
 
     @State private var viewModel: IngredientListViewModel
 
-    @AppStorage("ingredientListNoteDismissed") private var ingredientListNoteDismissed = false
+    @AppStorage(.generationNoteDismissedKey) private var generationNoteDismissed = false
 
 
     init(selectedFood: Binding<FoodItem?>, generator: IngredientGenerator, expandedIngredients: Binding<Set<PersistentIdentifier>>) {
@@ -46,8 +46,8 @@ struct IngredientListView: View {
             }
             ScrollViewReader { proxy in
                 List(selection: viewModel.isEditing ? $viewModel.selectedIDs : .constant(Set<PersistentIdentifier>())) {
-                    if !viewModel.isEditing && !ingredientListNoteDismissed {
-                        IngredientListNote(isDismissed: $ingredientListNoteDismissed)
+                    if !viewModel.isEditing && !generationNoteDismissed {
+                        IngredientListNote(isDismissed: $generationNoteDismissed)
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 8, leading: 32, bottom: 8, trailing: 32))
                     }
