@@ -74,6 +74,52 @@ extension Generator {
             // permissiveContentTransformations. It's either completely random
             // or overly restrictive.
             
+            switch settings.kind {
+            case .ingredients:
+                break
+            case .varieties:
+                guard container.about.isEmpty else {
+                    break
+                }
+                // During variety generation, stream the ingredient's "about" description.
+                // This is done before the "audit" checks below because we know
+                // by this point that the *ingredient* (the varieties' "container")
+                // has already been validated, so we can go ahead and update its about.
+                
+                // This is done in a task so it doesn't block variety generation.
+                // In practice it's already pretty fast and will finish before varieties
+                // generate in most cases, but at least it doesn't block that process.
+                Task { [weak token, weak container] in
+                    guard let token, let container else {
+                        return
+                    }
+                    let descriptionSession = LanguageModelSession(
+                        model: .init(guardrails: .permissiveContentTransformations),
+                        instructions: .init {
+                            "Your job is to answer questions about food."
+                        }
+                    )
+                    let descriptionStream = descriptionSession.streamResponse(
+                        to: "Give a one-sentence description of '\(container.name)' as a food ingredient.",
+                        generating: String.self
+                    )
+                    for try await partialDescription in descriptionStream {
+                        if token.isCancelled {
+                            // Note: since tasks don't propogage errors we can't throw
+                            // the cancellation at this point, so just stop the process,
+                            // reset the about and return. The error will get thrown below.
+                            container.about = ""
+                            return
+                        }
+                        let about = partialDescription.content
+                        container.about = about
+                    }
+                    if debug {
+                        print(container.name, "description:", container.about)
+                    }
+                }
+            }
+
             let parser = Parser(strategy: DelimitedStringParsingStrategy())
             let lines = parser.parse(response.content)
             
@@ -106,32 +152,6 @@ extension Generator {
                     }
                 )
                 do {
-                    switch settings.kind {
-                    case .ingredients:
-                        break
-                    case .varieties:
-                        guard container.about.isEmpty else {
-                            break
-                        }
-                        // During variety generation, stream the ingredient's description.
-                        // This is done before the "is food" check because we know
-                        // by this point that the ingredient (the varieties "container")
-                        // has already been validated.
-                        let descriptionStream = auditSession.streamResponse(
-                            to: "Give a one-sentence description of '\(container.name)' as a food ingredient.",
-                            generating: String.self
-                        )
-                        for try await partialDescription in descriptionStream {
-                            if token.isCancelled {
-                                throw GeneratorError.cancelled
-                            }
-                            let about = partialDescription.content
-                            container.about = about
-                        }
-                        if debug {
-                            print(line, "description:", container.about)
-                        }
-                    }
                     // The "is food" check handles situations where the model refuses to generate
                     // the response due to guardrail errors, in which case the string response
                     // may contain explanations which need to be filtered out.
